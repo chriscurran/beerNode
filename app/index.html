@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<!--
+/**
+ * beerNode viewer
+ *
+ * A viewer for the Node.js 1Wire server
+ *
+ * @version	1.1
+ * @copyright(c) 2013 Chris Curran
+ *	See the file license.txt for copying permission.
+ */
+-->
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>beerNode</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content="beerNode brewing software">
+	<meta name="author" content="Chris Curran">
+
+	<link rel="stylesheet" href="css/common.css">
+
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+	
+
+	<style type="text/css">
+
+		body {
+			padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+		}
+
+		#canvas {
+			margin-top: 10px;
+		}
+
+		#console {
+			font-size:12pt;
+			font-family: courier;
+			height: 320px;
+			width:auto;
+			overflow-y: auto;
+			padding: 4px;
+			margin-top: 20px;
+			margin-bottom: 10px;
+			border:1px solid gray;
+			background-color: #efe9e3;
+		}
+
+		.hidden {
+			display: none;
+		}
+
+		#loading {
+			margin-top: 
+			font-size:18px;
+			font-style:italic;
+			vertical-align:middle;
+		}
+
+		.temperature-options {
+			margin-bottom: 10px;
+		}
+	</style>
+
+
+
+</head>
+<body>
+
+	<div id='loading' class="">
+		<div class="row">
+		    <div class="col-md-4 col-md-offset-4">
+				<h1>Loading. Please wait...</h1>
+		    </div>
+		</div>
+	</div>
+
+	<div id='canvas' class="hidden"></div>
+
+	<div id='__templates__'></div>
+
+
+	<script type="text/javascript" src="{{ server }}/socket.io/socket.io.js"></script>	
+
+	<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+	<script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.2.0/bootbox.min.js"></script>
+	
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.6.0/underscore-min.js"></script>
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
+
+	<script type='text/javascript' src='js/tween-min.js'></script>
+	<script type='text/javascript' src='js/steelseries-min.js'></script>
+
+	<script type='text/javascript' src='js/lib.js'></script>
+	<script type='text/javascript' src='js/types.js'></script>
+
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+
+<script>
+
+
+
+//
+// define a global obj, keeping the namespace clean
+//
+var global = {};
+global.devices = new deviceCollectionT();
+global.server = null;
+
+
+/**
+ * display a messge to the console div
+ */
+function dsp(msg) {
+	try{
+
+	var console = $('#console');
+	console.html(console.html()+msg+"<br>");
+	console.scrollTop( console[0].scrollHeight - console.height() );
+	}
+	catch(err) {}
+}
+
+/**
+ * when the document is ready...
+ */
+$().ready( function() {
+
+	// LIB.post("echo", {form:"formObj", fields:"fields", global:global}, {
+	// 	success: function(result) {
+	// 		debugger;
+	// 	},
+	// 	failure: function(xhr) {
+	// 		alert("There was an error");
+	// 	}
+	// });
+
+	// 
+	// setup underscore template engine to use mustache style markers
+	// 
+	_.templateSettings = {
+		evaluate:		/\{\{#([\s\S]+?)\}\}/g,
+		interpolate:	/\{\{[^#\{]([\s\S]+?)[^\}]\}\}/g,
+		escape:			/\{\{\{([\s\S]+?)\}\}\}/g
+	}
+
+
+	Highcharts.setOptions({
+		global: {
+			useUTC: false
+		}
+	});
+
+
+	//
+	// create a websocket connection to our server
+	//
+	var server = io.connect('{{ server }}');
+
+	server.on('connect', function () {
+		global.server = server;
+		dsp("connected to {{ server }}, id:"+server.socket.sessionid);
+
+		// 
+		// ask for our templates
+		// 
+		server.emit("load_templates", {fname:"app/templates/index.html"});
+	});
+
+	server.on('disconnect', function (clientSocket) {
+		console.log("disconnect!");
+		dsp("disconnected from {{ server }}");
+	});
+
+	server.on('error', function (obj) {
+		dsp("error");
+	});
+
+
+	// 
+	// load our templates
+	// 
+	server.on('load_templates', function(data) {
+		$("#__templates__").append(data.data);
+
+		var html = _.template($("#template-canvas").html(), {});
+		$("#canvas").html(html);
+
+		// 
+		// ask for the device list now
+		// 
+		server.emit("device_enum", {});
+	});
+
+
+	//
+	// Handle a 'device enumeration' message from the server. The server will send
+	// this message right after connecting to it.
+	//
+	server.on('device_enum', function(data) {
+		//
+		// get the device list
+		//
+		var deviceList = data;
+
+		//
+		// iterate through the device list and create a model/view for each one
+		//
+		_.each(deviceList, function(dev) {
+			var mdl, domId;
+
+			dev.config.method = (typeof dev.config.method === 'undefined') ? '':dev.config.method;
+			dev.config.method = dev.config.method.toLowerCase();
+
+			switch (dev.type) {
+				case "temperature":
+					mdl = new deviceModelT({ id: dev.name, currentVal:dev.val, config:dev.config });
+					global.devices.add(mdl);
+
+					//domId = dev.name+'Gauge';
+					domId = dev.name;
+					if ($("#"+domId).length != 0) {
+						new GaugeViewT({id: domId,
+										titleString: dev.config.title,
+										trendVisible: true,
+										model: mdl,
+										threshold: (typeof dev.config.target === 'undefined') ? 212:parseInt(dev.config.target),
+										minValue: (typeof dev.config.minValue === 'undefined') ? 70:parseInt(dev.config.minValue),
+										maxValue: (typeof dev.config.maxValue === 'undefined') ? 230:parseInt(dev.config.maxValue)
+										});
+					}
+					break;
+
+				case "switch":
+					mdl = new switchModelT({ id: dev.name, config:dev.config });
+					global.devices.add(mdl);
+
+					domId = dev.name+'Switch';
+					if ($("#"+domId).length != 0) {
+						new SwitchViewT({
+										id: domId,
+										el: $("#"+domId),
+										titleString: dev.name,
+										model: mdl
+										});
+					}
+					break;
+			}
+
+			//
+			// update the view of the device
+			//
+			ioEvents.trigger('change', dev);
+		});
+
+
+		$(".gauge-options").click(function(ev){
+			gaugeOptions(this, ev);
+		});
+
+		$("#loading").addClass("hidden");
+		$("#canvas").removeClass("hidden");
+	});
+
+	//
+	// a device has changed status - update the model (which will trigger the view update)
+	//
+	server.on('device_status', function(device) {
+		//
+		// send a 'change' event to all models
+		//
+		ioEvents.trigger('change', device);
+
+		if (device.type==='temperature') {
+
+			// debugger;
+			var dev = global.devices.get(device.name);
+			var view = dev.get('view');
+
+			view.chartAddPoint(device.val);
+
+			/*
+			var chart = view.options.chart;
+
+			var x = (new Date()).getTime(); // current time
+
+			chart.series[0].addPoint([x, device.val], true, true);
+			*/
+		}
+
+
+
+	});
+
+});
+
+
+/**
+ *
+ *
+ */
+function gaugeOptions(self, ev) {	
+	// debugger;
+
+	var device_id =  $(self).data("for"); 
+	var device = global.devices.get(device_id);
+
+	var html = _.template($("#template-gauge-options").html(), device.toJSON());
+
+	LIB.confirm({content:html, title:"Gauge options", class:"bootbox-small", goButton:"OK"}, function(result) {
+
+		if (result) {
+			var view = device.get('view');
+			var gauge = view.gauge;
+			var config = device.get("config");
+
+			var val = $("#gauge-target").val();
+			if ($.isNumeric(val)) {
+				gauge.setThreshold(val);
+				config.target = val;
+			}
+
+			val = $("#gauge-min").val();
+			var pi = parseInt(val);
+			if ($.isNumeric(val)) {
+				gauge.setMinValue(val);
+				config.minValue = val;
+			}
+
+			val = $("#gauge-max").val();
+			if ($.isNumeric(val)) {
+				gauge.setMaxValue(val);
+				config.maxValue = val;
+			}
+
+			// LIB.post("_form.php", "create_form", {iid:global.iid, name:name, description:desc, flg:flg}, {
+			// 	success: function(result) {
+			// 		//
+			// 		// reload
+			// 		//
+			// 		window.location.href= "./builder.php?id="+result.data.form_id;
+			// 	},
+			// 	failure: function(xhr) {
+			// 		alert("There was an error creating the "+ttl);
+			// 	}
+			// });
+
+			return true;
+		}
+	}); 
+
+	LIB.bootbox.on('shown.bs.modal',function(){
+		$("#gauge-target").focus();
+
+		$("#guide-options-modal").change(function(ev){
+			var id = ev.target.id;
+			var val = ev.target.value;
+
+			var grp = $("#"+ev.target.id).data('grp');
+			switch(grp) {
+			case "selector.pid":
+				if (val === 'pid') {
+					// PID
+					$("#gauge-pid-options").removeClass("hidden");	
+					$("#gauge-range-options").addClass("hidden");	
+				}
+				else {
+					// Ranging
+					$("#gauge-pid-options").addClass("hidden");		
+					$("#gauge-range-options").removeClass("hidden");	
+				}
+				break;
+			}
+
+		});
+
+
+	});
+
+}
+
+
+</script>
+
+
+</body>
+</html>

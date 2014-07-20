@@ -1,0 +1,205 @@
+<style>
+
+.graph {
+	margin-top:10px;
+	margin-bottom:10px;
+	width:80%;
+	/*width:840px;*/
+	height:320px;
+}
+
+#tabs {
+	margin-top:20px;
+}
+</style>
+
+
+<script type="text/template" id="template-canvas">  
+
+    <!-- Fixed navbar -->
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+      <div class="container">
+        
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">beerNode</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+
+            <li class="active"><a href="#">Dashboard</a></li>
+            <!--
+            <li><a href="./builder.html?profile_id=1">Builder</a></li>
+            -->
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="https://github.com/chriscurran/beerNode" target=_github>gitHub</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
+
+	<div class="container-fluid">
+	  <div class="row">
+		
+		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-1 main">
+		  <div class="row placeholders">
+			
+			<div class="col-xs-6 col-sm-3 placeholder">
+				<center>
+					<canvas id="HLT_Temperature" width="300" height="300">
+						No canvas in your browser...sorry...
+					</canvas>
+					<div class="temperature-options">
+						<a class="gauge-options" data-for="HLT_Temperature" href="#">gauge options</a>
+					</div>
+
+					<button id='HLT_HeaterSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<h4></h4>
+					<button id='HLT_PumpSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<h4></h4>
+					<button id='HLT_AgitatorSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+				</center>
+			</div>
+
+			<div class="col-xs-6 col-sm-3 placeholder">
+				<center>
+					<canvas id="MASH_Temperature" width="300" height="300">
+						No canvas in your browser...sorry...
+					</canvas>
+					<div class="temperature-options">
+						<a class="gauge-options" data-for="MASH_Temperature" href="#">gauge options</a>
+					</div>
+
+					<button id='MASH_PumpSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+				</center>
+
+			</div>
+			
+			<div class="col-xs-6 col-sm-3 placeholder">
+				<center>
+					<canvas id="RIMS_Temperature" width="300" height="300">
+						No canvas in your browser...sorry...
+					</canvas>
+					<div class="temperature-options">
+						<a class="gauge-options" data-for="RIMS_Temperature" href="#">gauge options</a>
+					</div>
+
+					<button id='RIMS_HeaterSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<h4></h4>
+					<button id='RIMS_PumpSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+				</center>
+			</div>
+			
+			<div class="col-xs-6 col-sm-3 placeholder">
+				<center>
+					<canvas id="BOIL_Temperature" width="300" height="300">
+						No canvas in your browser...sorry...
+					</canvas>
+					<div class="temperature-options">
+						<a class="gauge-options" data-for="BOIL_Temperature" href="#">gauge options</a>
+					</div>
+
+					<button id='BOIL_HeaterSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+				</center>
+			
+			</div>
+
+		  </div>
+
+
+			<ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
+				<li class="active"><a href="#hlt_tab" data-toggle="tab">HLT</a></li>
+				<li><a href="#mash_tab" data-toggle="tab">Mash</a></li>
+				<li><a href="#rims_tab" data-toggle="tab">RIMS</a></li>
+				<li><a href="#boil_tab" data-toggle="tab">BOIL</a></li>
+				<li><a href="#console_tab" data-toggle="tab">Console</a></li>
+			</ul>
+
+			<div id="tab-content" class="tab-content">
+				<div class="tab-pane active" id="hlt_tab">
+					<div class='graph' id='HLT_Temperature-graph'></div>
+				</div>
+				<div class="tab-pane" id="mash_tab">
+					<div class='graph' id='MASH_Temperature-graph'></div>
+				</div>
+				<div class="tab-pane" id="rims_tab">
+					<div class='graph' id='RIMS_Temperature-graph'></div>
+				</div>
+				<div class="tab-pane" id="boil_tab">
+					<div class='graph' id='BOIL_Temperature-graph'></div>
+				</div>
+				<div class="tab-pane" id="console_tab">
+					<div class='graph' id='console'></div>
+				</div>
+			</div>
+
+		</div>
+	  </div>
+	</div>
+</script>  
+
+
+<style>
+
+#guide-options-modal label {
+	width:100px;
+	text-align: right;
+}
+
+</style>
+
+<script type="text/template" id="template-gauge-options">  
+
+<div id="guide-options-modal">
+
+	<label for="gauge-target">Target</label>
+	<input id="gauge-target" class="input-sz-xsmall" value="{{ config.target }}" />
+	<br>	
+
+	<label for="gauge-min">Minimum</label>
+	<input id="gauge-min" class="input-sz-xsmall" value="{{ config. minValue }}" />
+	<br>	
+
+	<label for="gauge-max">Maximum</label>
+	<input id="gauge-max" class="input-sz-xsmall" value="{{ config.maxValue }}" />
+
+
+	<br>	
+	<br>	
+	<label for="gauge-method">Method</label>
+	<SELECT id="gauge-method" class="" data-grp="selector.pid">
+		<OPTION value='basic'>Basic</OPTION>
+		<OPTION value='range' {{# if (config.method==='range') print('selected'); }}>Ranging</OPTION>
+		<OPTION value='pid'   {{# if (config.method==='pid') print('selected'); }}>PID Controller</OPTION>
+	</SELECT>
+
+
+	<div id="gauge-range-options" {{# if (config.method!=='range') print("class='hidden'"); }} >
+		<label for="gauge-range-lower">Lower</label>
+		<input id="gauge-range-lower" class="input-sz-xsmall" value="{{ config.rangeLow }}" />
+
+		<br>
+		<label for="gauge-range-upper">Upper</label>
+		<input id="gauge-range-upper" class="input-sz-xsmall" value="{{ config.rangeHigh }}" />
+
+	</div>
+
+	<div id="gauge-pid-options" {{# if (config.method!=='pid') print("class='hidden'"); }} >
+
+		<label for="gauge-pid-kp">KP</label>
+		<input id="gauge-pid-kp" class="input-sz-xsmall" value="{{ config.kp }}" />
+		<br>
+		<label for="gauge-pid-ki">KI</label>
+		<input id="gauge-pid-ki" class="input-sz-xsmall" value="{{ config.ki }}" />
+		<br>
+		<label for="gauge-pid-kd">KD</label>
+		<input id="gauge-pid-kd" class="input-sz-xsmall" value="{{ config.kd }}" />
+
+	</div>
+
+
+
+<div>
+</script>  

@@ -1,0 +1,16 @@
+{
+  "name": "beerNode",
+  "description": "Beer Node Server",
+  "version": "0.0.3",
+  "private": true,
+  "dependencies": {
+    "express": "x",
+    "socket.io": "0.9.x",
+    "iniparser": "x",
+    "mysql": "x",
+    "underscore": "x",
+    "node-pid-controller": "x",
+    "node-uuid": "x"
+  }
+}
+
