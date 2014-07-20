@@ -8,7 +8,7 @@ To Install
 
 Screenprints
 
-![alt text](www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
+![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
 Uses
 
