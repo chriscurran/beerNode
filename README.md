@@ -1,13 +1,11 @@
-beerNode v1.0
-
-To Install
-
+## beerNode v1.0
+### To Install
 	- # git clone https://github.com/chriscurran/beerNode.git
 	- # cd beerNode
 	- # npm install
 
-Screenprints
-
+### Screenprints
+#### Dashboard
 ![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
 Uses
