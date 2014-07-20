@@ -8,7 +8,7 @@
 #### Dashboard
 ![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
-Uses
+### Uses
 
 	- Node.js, http://nodejs.org/
 	- Bootstrap 3.x, http://getbootstrap.com/
