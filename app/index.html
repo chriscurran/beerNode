@@ -40,7 +40,7 @@
 			font-family: courier;
 			height: 320px;
 			width:auto;
-			overflow-y: auto;
+			overflow-y: scroll;
 			padding: 4px;
 			margin-top: 20px;
 			margin-bottom: 10px;
@@ -116,10 +116,11 @@ global.server = null;
  */
 function dsp(msg) {
 	try{
+		var c = $('#console');
+		c.html( c.html()+msg+"<br>" );
 
-	var console = $('#console');
-	console.html(console.html()+msg+"<br>");
-	console.scrollTop( console[0].scrollHeight - console.height() );
+		var h = c[0].scrollHeight;		
+		c.scrollTop( h - c.height() );
 	}
 	catch(err) {}
 }
@@ -128,15 +129,6 @@ function dsp(msg) {
  * when the document is ready...
  */
 $().ready( function() {
-
-	// LIB.post("echo", {form:"formObj", fields:"fields", global:global}, {
-	// 	success: function(result) {
-	// 		debugger;
-	// 	},
-	// 	failure: function(xhr) {
-	// 		alert("There was an error");
-	// 	}
-	// });
 
 	// 
 	// setup underscore template engine to use mustache style markers
@@ -281,16 +273,7 @@ $().ready( function() {
 			var view = dev.get('view');
 
 			view.chartAddPoint(device.val);
-
-			/*
-			var chart = view.options.chart;
-
-			var x = (new Date()).getTime(); // current time
-
-			chart.series[0].addPoint([x, device.val], true, true);
-			*/
 		}
-
 
 
 	});
