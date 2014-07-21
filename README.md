@@ -1,13 +1,10 @@
 ## beerNode v1.0
-
-
 ### Requirements
-beerNode requries 
 
 	- Node.js 
 	- 1-Wire filesystem
 	
-Wiki on how to setup the Raspberry Pi with 1-Wire: [Wiki](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi).
+How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi).
 	
 
 ### Install
