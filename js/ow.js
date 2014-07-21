@@ -38,6 +38,7 @@ var OneWireT = Class.extend({
 	init: function(name, mode) {
 		this.devName = name;		//the device name
 		this.devMode = mode;		//the device mode (r, w, rw)
+		this.history = null;		//the device read history
 
 		try {
 			this.fp = fs_ext.openSync(name,mode);
@@ -62,6 +63,12 @@ var OneWireT = Class.extend({
 			console.log("error closing 1wire device:"+this.name+" error="+err.message)
 		}
 	},
+
+
+	getHistory: function() {
+		return this.history;
+	},
+
 
 	read: function() {
 		try {
@@ -157,6 +164,22 @@ var OneWire1820 = OneWireT.extend ({
 
 	init: function(name) {
 		this._super(name+"/temperature", "r");
+
+		this.history = new Array();
+	},
+
+	push: function(item) {
+		if (this.history.length > 100)
+			this.history.pop();
+
+		var now = (new Date()).getTime(); // current time
+		this.history.push([now,item]);
+	},
+
+	read: function() {
+		var d = this._super();		
+		this.push(d);
+		return d;
 	}
 
 });

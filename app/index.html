@@ -215,7 +215,7 @@ $().ready( function() {
 					//domId = dev.name+'Gauge';
 					domId = dev.name;
 					if ($("#"+domId).length != 0) {
-						new GaugeViewT({id: domId,
+						var v = new GaugeViewT({id: domId,
 										titleString: dev.config.title,
 										trendVisible: true,
 										model: mdl,
@@ -223,6 +223,10 @@ $().ready( function() {
 										minValue: (typeof dev.config.minValue === 'undefined') ? 70:parseInt(dev.config.minValue),
 										maxValue: (typeof dev.config.maxValue === 'undefined') ? 230:parseInt(dev.config.maxValue)
 										});
+						_.each(dev.history, function(p){
+							v.chartAddPoint(p[0],p[1],false);							
+						});
+						mdl.get('chart').redraw();
 					}
 					break;
 
@@ -272,7 +276,7 @@ $().ready( function() {
 			var dev = global.devices.get(device.name);
 			var view = dev.get('view');
 
-			view.chartAddPoint(device.val);
+			view.chartAddPoint(0,device.val);
 		}
 
 

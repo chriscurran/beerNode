@@ -302,6 +302,7 @@ function enumDevices(s) {
 			obj.config = dev;
 
 			obj.val = dev.instance.read();
+			obj.history = dev.instance.getHistory();
 
 			deviceList.push(obj);
 		}

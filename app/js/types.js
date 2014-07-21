@@ -88,7 +88,7 @@ var GaugeViewT = Backbone.View.extend({
 		maxValue: 250,
 
 		chart: null,
-		dataPoints:40
+		dataPoints:100
 	},
 
 	//
@@ -146,15 +146,20 @@ var GaugeViewT = Backbone.View.extend({
 	},
 
 
-	chartAddPoint: function(data) {
+	chartAddPoint: function(timestamp, data, redraw) {
 
 		var chart = this.model.get("chart");
 		var series = chart.series[0],
 			shift = series.data.length > this.dataPoints;	// shift if the series is 
 	                                                 		// longer than 20
-			
-		var x = (new Date()).getTime(); // current time
-		chart.series[0].addPoint([x, parseFloat(data)], true, shift);
+
+		if (typeof redraw === 'undefined')
+			redraw = true;
+
+		if (timestamp==0)
+			timestamp = (new Date()).getTime(); // current time
+
+		chart.series[0].addPoint([timestamp, parseFloat(data)], redraw, shift);
 	},
 
 
