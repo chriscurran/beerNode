@@ -11,6 +11,9 @@
 #### PID Options
 ![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "Dashboard")
 
+#### Range Options
+![alt text](http://www.planetcurran.com/beer/beerNode/1820-range.png "Dashboard")
+
 
 ### Uses
 

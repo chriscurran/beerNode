@@ -38,10 +38,21 @@ var deviceModelT = Backbone.Model.extend({
 		// monitor global ioEvents aggregator for 'change' events
 		//
 		this.ioEvents.on('change', function(device){
+			
 			if (this.id === device.name) {
+
+				if (device.type==='temperature') {
+
+					device.val = LIB.randomFloatFromInterval(parseFloat(device.val-1), parseFloat(device.val+1))
+
+					this.get('view').chartAddPoint(0,device.val);
+				}
+
 				this.set('currentVal', device.val)
 				dsp(device.name + " type:"+ device.type + "\tvalue:"+ device.val + "\t\tdate:"+ device.date);
+
 			}
+
 		}, this);
 	}
 });

@@ -124,4 +124,15 @@ LIB.fieldType = function(type) {
 }
 
 
+LIB.randomIntFromInterval = function(min,max) {
+    return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+
+LIB.randomFloatFromInterval = function(min,max) {
+	var precision = 2;
+	return parseFloat(Math.min(min + (Math.random() * (max - min)),max).toFixed(precision));
+}
+
+
 

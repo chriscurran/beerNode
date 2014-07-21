@@ -269,17 +269,6 @@ $().ready( function() {
 		// send a 'change' event to all models
 		//
 		ioEvents.trigger('change', device);
-
-		if (device.type==='temperature') {
-
-			// debugger;
-			var dev = global.devices.get(device.name);
-			var view = dev.get('view');
-
-			view.chartAddPoint(0,device.val);
-		}
-
-
 	});
 
 });
