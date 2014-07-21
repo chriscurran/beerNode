@@ -67,23 +67,24 @@ Temperature and switch devices must be configured on the server before use.
 
 ### Bullpen
 
-	- Replace Steelseries gauges with Highcharts radial charts. They're not quite as pretty as Steelseries,
-	  but it wold cut the "fat" a tiny bit, and, Highcharts is well supported whereas Steelseries appears to be 
-	  mostly an abandoned project.
+      - Replace Steelseries gauges with Highcharts radial charts. They're not quite as pretty as Steelseries,
+	but it wold cut the "fat" a tiny bit, and, Highcharts is well supported whereas Steelseries appears to be 
+	mostly an abandoned project.
 
-	- Integrate drag & drop "profile" builder. A profile is a sequence of tasks to perform, in order.
-	  [Builder app](http://www.planetcurran.com/beer/beerNode/builder-main.png)
-	  [Control options](http://www.planetcurran.com/beer/beerNode/builder-main.png)
+      - Integrate drag & drop "profile" builder. A profile is a sequence of tasks to perform.
+
+
+#### Builder preview
 
 
 
 ### Technologies and packages used by beerNode
 
-Node.js, http://nodejs.org/
-Bootstrap 3.x, http://getbootstrap.com/
-Backbone.js, http://backbonejs.org/
-Highcharts, http://www.highcharts.com/
-Node PID Controller, https://github.com/Philmod/node-pid-controller
-INI Parser, https://github.com/shockie/node-iniparser
-Class.js, http://ejohn.org/blog/simple-javascript-inheritance/
-Steelseries, https://github.com/HanSolo/SteelSeries-Canvas
+ - Node.js, http://nodejs.org/
+ - Bootstrap 3.x, http://getbootstrap.com/
+ - Backbone.js, http://backbonejs.org/
+ - Highcharts, http://www.highcharts.com/
+ - Node PID Controller, https://github.com/Philmod/node-pid-controller
+ - INI Parser, https://github.com/shockie/node-iniparser
+ - Class.js, http://ejohn.org/blog/simple-javascript-inheritance/
+ - Steelseries, https://github.com/HanSolo/SteelSeries-Canvas
