@@ -5,7 +5,7 @@ free, open-source technologies.
 
 My 1'st generation controller is based on Linux and 1-Wire devices and the
 software is a collection of bash scripts I wrote. The scripts work, but there
-is no UI. You can review it here: [click](http://www.homebrewtalk.com/f51/monitoring-controlling-linux-cheap-240955)
+is no UI. You can review it [here](http://www.homebrewtalk.com/f51/monitoring-controlling-linux-cheap-240955).
 
 I've been happy with the 1Wire devices, but one thing that trips me up is that
 the above controller, and most others that I know of, are "centralized". What
@@ -82,7 +82,7 @@ Temperature and switch devices must be configured on the server before use.
 ![Builder app](http://www.planetcurran.com/beer/beerNode/builder-main-00.png)
 
 
- - To edit the properties of a control, click it:
+##### To edit the properties of a control, click it:
 
 ![Control options](http://www.planetcurran.com/beer/beerNode/builder-control-00.png)
 
