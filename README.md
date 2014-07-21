@@ -8,6 +8,10 @@
 #### Dashboard
 ![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
+#### PID Options
+![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "Dashboard")
+
+
 ### Uses
 
 	- Node.js, http://nodejs.org/
