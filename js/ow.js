@@ -176,12 +176,6 @@ var OneWire1820 = OneWireT.extend ({
 		this.history.push([now,item]);
 	}
 
-	// read: function() {
-	// 	var d = this._super();		
-	// 	this.push(d);
-	// 	return d;
-	// }
-
 });
 //module.exports = OneWire1820;
 module.exports.OneWire1820 = OneWire1820;
