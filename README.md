@@ -1,12 +1,11 @@
 ## beerNode v1.0
 
-
 **beerNode** is a 2'nd generation project to create a home brew controller using
 free, open-source technologies.
 
-My 1'st generation controller is based on Linux & 1-Wire devices and the
+My 1'st generation controller is based on Linux and 1-Wire devices and the
 software is a collection of bash scripts I wrote. The scripts work, but there
-is no UI. You can view it here: http://www.homebrewtalk.com/f51/monitoring-controlling-linux-cheap-240955
+is no UI. You can review it here: [click](http://www.homebrewtalk.com/f51/monitoring-controlling-linux-cheap-240955)
 
 I've been happy with the 1Wire devices, but one thing that trips me up is that
 the above controller, and most others that I know of, are "centralized". What
@@ -21,11 +20,8 @@ Node.js due to it's socket stack and minimal cpu/memory requirements (as
 compared to full blown web server like Apache or NGINX).
 
 The software runs on Linux, any flavor. The development and testing is done
-using Fedora, but is targeted to the Raspberry Pi hardware. You can view the
-setup instructions for your Pi in the Wiki here.
-
-[Raspberry Pi setup instructions](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi)
-
+using Fedora, but is targeted to the Raspberry Pi hardware. The setup instructions 
+for your Pi: [Raspberry Pi setup instructions](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi)
 
 
 ### Requirements
