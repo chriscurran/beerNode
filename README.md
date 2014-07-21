@@ -40,7 +40,7 @@ How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com
 
 ### Screenprints
 #### Dashboard
-![alt text](http://www.planetcurran.com/beer/beerNode/dashboard1.png "Dashboard")
+![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
 #### PID Options
 ![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "PID Options")
