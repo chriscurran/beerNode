@@ -302,11 +302,11 @@ var SwitchViewT = Backbone.View.extend({
 		var config = this.model.get('config');
 
 		if (state == 1) {
-			this.$el.html(config.title+" off");
+			this.$el.html(config.title);
 			this.$el.removeClass('btn-danger').addClass('btn-success');
 		}
 		else {
-			this.$el.html(config.title+" on");
+			this.$el.html(config.title);
 			this.$el.removeClass('btn-success').addClass('btn-danger');
 		}
 

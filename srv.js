@@ -22,16 +22,16 @@ var express = require('express'),
 	iniparser = require('iniparser'),
 	_ = require("underscore"),
 	ow = require("./js/ow.js");
-	sql = require("./js/sql.js"),
-	db = require('./js/db.js'),
+	// sql = require("./js/sql.js"),
+	// db = require('./js/db.js'),
 	Controller = require('node-pid-controller');
 
 	var app = express();
-	// var global = {};
 
 	var	SENSOR_TEMPERATURE	= '1820';		// DS1820 series temperature sensor
 	var	SENSOR_SWITCH2		= '2406';		// DS2406 switch, 2 addressable
 	var	SENSOR_SWITCH8		= '2408';		// DS2408 switch, 8 addressable
+	var	SENSOR_GPIO			= 'GPIO';		// GPIO on the Raspberry Pi, 8 addressable
 
 
 	// 
@@ -48,10 +48,12 @@ var express = require('express'),
 	// load the config.ini file
 	//
 	doConfig();
-	// console.log(global.config);
 
-	console.log("connecting to MySQL server at ", global.config.db.host);
-	var connection = db.getConnection();
+	// 
+	// connect to mysql
+	// 
+	// console.log("connecting to MySQL server at ", global.config.db.host);
+	// var connection = db.getConnection();
 
 	//
 	// start the server
@@ -69,13 +71,8 @@ var express = require('express'),
 	// 
 	// handle index.html special
 	// 
-	app.get('/', function(req, res){
-		filterIndexHTML(req,res);
-	});
-
-	app.get('/index.html', function(req, res){
-		filterIndexHTML(req,res);
-	});
+	app.get('/', function(req, res)				{ filterIndexHTML(req,res);	});
+	app.get('/index.html', function(req, res)	{ filterIndexHTML(req,res);	});
 
 	// 	
 	// ajax handler
@@ -84,27 +81,42 @@ var express = require('express'),
 		ajaxHandler(req,res);
 	});
 
+	// 
+	// create routes
+	// 
 	console.log("__dirname:"+__dirname);
 	app.use(express.static(__dirname + '/app'));
 	app.use('/js', express.static(__dirname + '/app/js'));
 	app.use('/css', express.static(__dirname + '/app/css'));
 
-	//app.use(express.bodyParser());
+	// 
+	// setup express error handling
+	// 
 	app.use(logErrors);
 	app.use(errorHandler);
 
+	// 
+	// express error logger
+	// 
 	function logErrors(err, req, res, next) {
 		console.error(err.stack);
 		next(err);
 	}
 
+	// 
+	// express error handler
+	// 
 	function errorHandler(err, req, res, next) {
 	  res.status(500);
 	  res.render('error', { error: err });
 	}
 
 
-
+	//
+	// Filter index.html for "{{ server }}" tags and replace that with the 
+	// current ip of the host we're running on. Otherwise, you have to hard-code
+	// the node server ip in your index.html - not ideal.
+	// 	
 	function filterIndexHTML(req, res) {
 	    console.log("filterIndexHTML req.url:"+req.url);
 
@@ -133,6 +145,9 @@ var express = require('express'),
 	}, interval);
 
 
+	// 
+	// toodles... we're running - handlers take over from here.
+	// 
 
 // 
 //  ajax handler
@@ -169,9 +184,6 @@ try {
 	res.send({ errCode: 500, errText: "AJAX ERROR"});
 }}
 
-//
-// socket events take over from here!
-//
 
 //
 // socket code
@@ -247,12 +259,14 @@ function setupSocket(server_obj) {
 		//
 		// handler for client 'sql' commands
 		//
+		/*
 		socket.on('sql', function(data) {
 
 			// console.log("SQL command:"+ JSON.stringify(data));
 			sql.handler(socket,data);
 
 		});
+		*/
 
 
 		var cinfo = socket.handshake.address;
@@ -450,8 +464,10 @@ function doConfig() {
 			dev.instance = new ow.OneWire2408(dev.file, dev.channel);
 		}
 
-		if (dev.instance.isOpen() == false)
+		if (typeof dev.instance === 'undefined' || dev.instance.isOpen() == false) {
+			console.log("Failed to open:"+dev.name)
 			process.exit();
+		}
 	}
 
 	//

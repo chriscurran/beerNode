@@ -49,6 +49,22 @@ How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com
 ![alt text](http://www.planetcurran.com/beer/beerNode/1820-range.png "Range Options")
 
 
+### Configuration
+
+Temperature and switch devices must be configured on the server before use.
+
+	[HLT_Temperature]
+	type=1820
+	file=/mnt/hlt_temperature
+	title=HLT
+	target=78
+	minValue=60
+	method=PID
+	kp=0.25
+	ki=0.01
+	kd=0.01
+	controls=HLT_Heater
+
 ### Uses
 
 	- Node.js, http://nodejs.org/
