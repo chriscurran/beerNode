@@ -169,7 +169,7 @@ var OneWire1820 = OneWireT.extend ({
 	},
 
 	push: function(item) {
-		if (this.history.length > 100)
+		if (this.history.length > 500)
 			this.history.pop();
 
 		var now = (new Date()).getTime(); // current time
