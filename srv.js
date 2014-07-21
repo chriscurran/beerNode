@@ -356,6 +356,7 @@ function checkDevices() {
 				//
 				var pid = '';
 				if (dev.type === SENSOR_TEMPERATURE) {
+					dev.instance.push(val);
 					pid = "\tpid:"+dev.pid.update(val);
 				}
 				console.log(dev.name + ": "+obj.val+pid);
