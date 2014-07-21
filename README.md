@@ -76,6 +76,16 @@ Temperature and switch devices must be configured on the server before use.
 
 #### Builder preview
 
+ - A control is dragged from the left to the workspace. 
+ - Controls can be reordered in thwe workspace by dragging them.
+
+![Builder app](http://www.planetcurran.com/beer/beerNode/builder-main-00.png)
+
+
+ - To edit the properties of a control, click it:
+
+![Control options](http://www.planetcurran.com/beer/beerNode/builder-control-00.png)
+
 
 
 ### Technologies and packages used by beerNode
