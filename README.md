@@ -68,7 +68,7 @@ Temperature and switch devices must be configured on the server before use.
 ### Bullpen
 
       - Replace Steelseries gauges with Highcharts radial charts. They're not quite as pretty as Steelseries,
-		but it wold cut the "fat" a tiny bit, and, Highcharts is well supported whereas Steelseries appears to be 
+		but it would cut the "fat" a tiny bit, and, Highcharts is well supported whereas Steelseries appears to be 
 		mostly an abandoned project.
 
       - Integrate drag & drop "profile" builder. A profile is a sequence of tasks to perform.
@@ -85,6 +85,8 @@ Temperature and switch devices must be configured on the server before use.
 ##### To edit the properties of a control, click it:
 
 ![Control options](http://www.planetcurran.com/beer/beerNode/builder-control-00.png)
+
+
 
 
 
