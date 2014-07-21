@@ -1,5 +1,17 @@
 ## beerNode v1.0
-### To Install
+
+
+### Requirements
+beerNode requries 
+
+	- Node.js 
+	- 1-Wire filesystem
+	
+Wiki on how to setup the Raspberry Pi with 1-Wire: [Wiki](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi).
+	
+
+### Install
+
 	- # git clone https://github.com/chriscurran/beerNode.git
 	- # cd beerNode
 	- # npm install
@@ -9,10 +21,10 @@
 ![alt text](http://www.planetcurran.com/beer/beerNode/dashboard.png "Dashboard")
 
 #### PID Options
-![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "Dashboard")
+![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "PID Options")
 
 #### Range Options
-![alt text](http://www.planetcurran.com/beer/beerNode/1820-range.png "Dashboard")
+![alt text](http://www.planetcurran.com/beer/beerNode/1820-range.png "Range Options")
 
 
 ### Uses
