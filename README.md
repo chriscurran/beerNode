@@ -20,8 +20,7 @@ Node.js due to it's socket stack and minimal cpu/memory requirements (as
 compared to full blown web server like Apache or NGINX).
 
 The software runs on Linux, any flavor. The development and testing is done
-using Fedora, but is targeted to the Raspberry Pi hardware. The setup instructions 
-for your Pi: [Raspberry Pi setup instructions](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi)
+using Fedora, but is targeted to the Raspberry Pi hardware. 
 
 
 ### Requirements
@@ -29,10 +28,9 @@ for your Pi: [Raspberry Pi setup instructions](https://github.com/chriscurran/be
 	- Node.js 
 	- 1-Wire filesystem
 	
-How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com/chriscurran/beerNode/wiki/Raspberry-Pi).
-	
 
 ### Install
+Raspberry Pi setup instructions: [click](https://github.com/chriscurran/beerNode/wiki/Setup-your-Raspberry-Pi). When the Pi is ready, install beerNode:
 
 	- # git clone https://github.com/chriscurran/beerNode.git
 	- # cd beerNode
