@@ -147,6 +147,9 @@ $().ready( function() {
 	});
 
 
+	global.bs_env = findBootstrapEnvironment();
+
+
 	//
 	// create a websocket connection to our server
 	//
@@ -159,7 +162,7 @@ $().ready( function() {
 		// 
 		// ask for our templates
 		// 
-		server.emit("load_templates", {fname:"app/templates/index.html"});
+		server.emit("load_templates", {/* fname:"index.html" */});
 	});
 
 	server.on('disconnect', function (clientSocket) {
@@ -178,7 +181,7 @@ $().ready( function() {
 	server.on('load_templates', function(data) {
 		$("#__templates__").append(data.data);
 
-		var html = _.template($("#template-canvas").html(), {});
+		var html = _.template($("#template-canvas").html(), {bs_env:global.bs_env});
 		$("#canvas").html(html);
 
 		// 
@@ -213,9 +216,13 @@ $().ready( function() {
 					global.devices.add(mdl);
 
 					//domId = dev.name+'Gauge';
+					//domId = dev.name+'-div';
 					domId = dev.name;
 					if ($("#"+domId).length != 0) {
-						var v = new GaugeViewT({id: domId,
+						var v = new GaugeViewT({
+										id: dev.name,
+										el: $("#"+domId),
+										bs_env: global.bs_env,
 										titleString: dev.config.title,
 										trendVisible: true,
 										model: mdl,
@@ -223,10 +230,7 @@ $().ready( function() {
 										minValue: (typeof dev.config.minValue === 'undefined') ? 70:parseInt(dev.config.minValue),
 										maxValue: (typeof dev.config.maxValue === 'undefined') ? 230:parseInt(dev.config.maxValue)
 										});
-						_.each(dev.history, function(p){
-							v.chartAddPoint(p[0],p[1],false);							
-						});
-						mdl.get('chart').redraw();
+						v.addHistory(dev.history);
 					}
 					break;
 
@@ -234,14 +238,18 @@ $().ready( function() {
 					mdl = new switchModelT({ id: dev.name, config:dev.config });
 					global.devices.add(mdl);
 
-					domId = dev.name+'Switch';
+					//domId = dev.name+'-div';
+					domId = dev.name;
 					if ($("#"+domId).length != 0) {
 						new SwitchViewT({
-										id: domId,
+										id: dev.name,
 										el: $("#"+domId),
 										titleString: dev.name,
 										model: mdl
 										});
+					}
+					else {
+						console.log("No DIV defined for:"+domId)
 					}
 					break;
 			}
@@ -253,25 +261,67 @@ $().ready( function() {
 		});
 
 
+		$("#loading").addClass("hidden");
+		$("#canvas").removeClass("hidden");
+
 		$(".gauge-options").click(function(ev){
 			gaugeOptions(this, ev);
 		});
 
-		$("#loading").addClass("hidden");
-		$("#canvas").removeClass("hidden");
+		$(".beernode-pause").click(function(ev){
+			var state = $(this).data("state"); 
+
+			// toggle current state
+			state = (state===1) ? 0:1;	
+
+			// $(this).data("state",state);
+
+			// if (state == 1) {
+			// 	$(this).removeClass("btn-danger").addClass("btn-success");
+			// 	$(this).html("Running");
+			// } else {
+			// 	$(this).addClass("btn-danger").removeClass("btn-success");
+			// 	$(this).html("Paused");
+			// }
+			setPauseState(state);
+
+			global.server.emit("device_set", {name: "all", val: state});
+
+		});
+
 	});
 
 	//
 	// a device has changed status - update the model (which will trigger the view update)
 	//
 	server.on('device_status', function(device) {
-		//
-		// send a 'change' event to all models
-		//
-		ioEvents.trigger('change', device);
+		if (device.name === "all" && device.type==='system') {
+			setPauseState(device.val);
+		}
+		else {			
+			//
+			// send a 'change' event to all models
+			//
+			ioEvents.trigger('change', device);
+		}
 	});
 
 });
+
+
+function setPauseState(state) {
+	var el = $(".beernode-pause");
+
+	el.data("state",state);
+
+	if (state == 1) {
+		el.removeClass("btn-danger").addClass("btn-success");
+		el.html("Running");
+	} else {
+		el.addClass("btn-danger").removeClass("btn-success");
+		el.html("Paused");
+	}
+}
 
 
 /**
@@ -311,18 +361,6 @@ function gaugeOptions(self, ev) {
 				gauge.setMaxValue(val);
 				config.maxValue = val;
 			}
-
-			// LIB.post("_form.php", "create_form", {iid:global.iid, name:name, description:desc, flg:flg}, {
-			// 	success: function(result) {
-			// 		//
-			// 		// reload
-			// 		//
-			// 		window.location.href= "./builder.php?id="+result.data.form_id;
-			// 	},
-			// 	failure: function(xhr) {
-			// 		alert("There was an error creating the "+ttl);
-			// 	}
-			// });
 
 			return true;
 		}

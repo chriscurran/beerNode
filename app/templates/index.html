@@ -11,6 +11,28 @@
 #tabs {
 	margin-top:20px;
 }
+
+.beernode-table td {
+	padding:3px;
+}
+
+/* the div that will hold a temperature control */
+ .beernode-temperature-wrapper {
+
+ }
+
+
+/* the div that will hold a switch control */
+ .beernode-switch-wrapper {
+ 	/*margin-bottom: 4px;*/
+ }
+
+/* override the default bootstrap button style */
+.beernode-switch {
+	font-size: 11px;
+	padding: 4px 10px 4px 10px;
+}
+
 </style>
 
 
@@ -44,64 +66,60 @@
 	  <div class="row">
 		
 		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-1 main">
+		  <button class='btn btn-large btn-success beernode-pause' data-state="1" type='button'>Running {{ bs_env }}</button>
+
 		  <div class="row placeholders">
 			
 			<div class="col-xs-6 col-sm-3 placeholder">
 				<center>
-					<canvas id="HLT_Temperature" width="300" height="300">
-						No canvas in your browser...sorry...
-					</canvas>
-					<div class="temperature-options">
-						<a class="gauge-options" data-for="HLT_Temperature" href="#">gauge options</a>
-					</div>
-
-					<button id='HLT_HeaterSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
-					<h4></h4>
-					<button id='HLT_PumpSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
-					<h4></h4>
-					<button id='HLT_AgitatorSwitch' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<div id="HLT_Temperature" class="beernode-temperature-wrapper">gauge space</div>
+					
+					<table class="beernode-table"><tr>
+						<td>
+							<div id='HLT_Heater' class="beernode-switch-wrapper"></div>
+						</td>
+						<td>
+							<div id='HLT_Agitator' class="beernode-switch-wrapper"></div>
+						</td>					
+					</tr>
+					<tr>
+						<td>
+						</td>
+						<td>
+							<div id='HLT_Pump' class="beernode-switch-wrapper"></div>
+						</td>
+					</tr>
+					</table>
 				</center>
 			</div>
 
 			<div class="col-xs-6 col-sm-3 placeholder">
 				<center>
-					<canvas id="MASH_Temperature" width="300" height="300">
-						No canvas in your browser...sorry...
-					</canvas>
-					<div class="temperature-options">
-						<a class="gauge-options" data-for="MASH_Temperature" href="#">gauge options</a>
-					</div>
+					<div id="RIMS_Temperature" class="beernode-temperature-wrapper"></div>
 
-					<button id='MASH_PumpSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
-				</center>
-
-			</div>
-			
-			<div class="col-xs-6 col-sm-3 placeholder">
-				<center>
-					<canvas id="RIMS_Temperature" width="300" height="300">
-						No canvas in your browser...sorry...
-					</canvas>
-					<div class="temperature-options">
-						<a class="gauge-options" data-for="RIMS_Temperature" href="#">gauge options</a>
-					</div>
-
-					<button id='RIMS_HeaterSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
-					<h4></h4>
-					<button id='RIMS_PumpSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<table class="beernode-table"><tr>
+						<td>
+							<div id='RIMS_Heater' class="beernode-switch-wrapper"></div>
+						</td>
+						<td>
+							<div id='RIMS_Pump' class="beernode-switch-wrapper"></div>
+						</td>					
+					</tr>
+					</table>
 				</center>
 			</div>
 			
 			<div class="col-xs-6 col-sm-3 placeholder">
 				<center>
-					<canvas id="BOIL_Temperature" width="300" height="300">
-						No canvas in your browser...sorry...
-					</canvas>
-					<div class="temperature-options">
-						<a class="gauge-options" data-for="BOIL_Temperature" href="#">gauge options</a>
-					</div>
-
-					<button id='BOIL_HeaterSwitch' value='val1' class="btn btn-success btn-large" type="button" title="Toggle power">Power</button>
+					<div id="MASH_Temperature" class="beernode-temperature-wrapper"></div>
+					<div id='MASH_Pump' class="beernode-switch-wrapper"></div>
+				</center>
+			</div>
+			
+			<div class="col-xs-6 col-sm-3 placeholder">
+				<center>
+					<div id="BOIL_Temperature" class="beernode-temperature-wrapper"></div>
+					<div id='BOIL_Heater' class="beernode-switch-wrapper"></div>
 				</center>
 			
 			</div>
@@ -199,7 +217,25 @@
 
 	</div>
 
-
-
 <div>
+</script>  
+
+
+
+
+
+<script type="text/template" id="template-temperature"> 
+
+	<canvas id='{{ id }}-instance' width='{{ gsize }}' height='{{ gsize }}'></canvas>
+	<div class='temperature-options'>
+		<a class='gauge-options beernode-temperature' data-for='{{ id }}' href='#'>gauge options</a>
+	</div>
+
+</script>  
+
+
+<script type="text/template" id="template-switch">  
+	
+	<button id='{{ id }}-instance' class='btn {{ cls }} btn-large beernode-switch' type='button'>{{ label }}</button>
+
 </script>  

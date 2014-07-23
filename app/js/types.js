@@ -41,13 +41,6 @@ var deviceModelT = Backbone.Model.extend({
 			
 			if (this.id === device.name) {
 
-				if (device.type==='temperature') {
-
-					device.val = LIB.randomFloatFromInterval(parseFloat(device.val-1), parseFloat(device.val+1))
-
-					this.get('view').chartAddPoint(0,device.val);
-				}
-
 				this.set('currentVal', device.val)
 				dsp(device.name + " type:"+ device.type + "\tvalue:"+ device.val + "\t\tdate:"+ device.date);
 
@@ -84,6 +77,8 @@ var deviceCollectionT = Backbone.Collection.extend({
  * uses https://github.com/HanSolo/SteelSeries-Canvas to display gauges
  */
 var GaugeViewT = Backbone.View.extend({
+	tagName:	'div',
+
 	//
 	// set some defaults for the gauge display
 	//
@@ -98,7 +93,8 @@ var GaugeViewT = Backbone.View.extend({
 		minValue: 40,
 		maxValue: 250,
 
-		chart: null,
+		// chart: null,
+		bs_env: 'lg',
 		dataPoints:100
 	},
 
@@ -106,15 +102,31 @@ var GaugeViewT = Backbone.View.extend({
 	// initialize the gauge display
 	//
 	initialize: function(options) {
+
+		GaugeViewT.template = _.template($("#template-temperature").html());
+
 		//
 		// turn defaults into options
 		//
 		var coptions = _.extend(this.defaults, options);
 
+		coptions.size = 240;
+		if (coptions.bs_env==='md')   coptions.size=200;
+		if (coptions.bs_env==='sm')   coptions.size=140;
+		if (coptions.bs_env==='xs')   coptions.size=160;
+
+
+		// 
+		// stick template into DOM
+		// 
+		this.$el.html( GaugeViewT.template( {id:coptions.id, gsize: coptions.size, bs_env:coptions.bs_env} ) );
+
+
 		//
 		// create the gauge
 		//
-		this.gauge = new steelseries.Radial(coptions.id, {
+		// var coptions = this.model.get("chart_options");
+		gauge = new steelseries.Radial(coptions.id+"-instance", {
 			gaugeType: steelseries.GaugeType.TYPE2,
 			size: coptions.size,
 			threshold: coptions.threshold,
@@ -128,20 +140,24 @@ var GaugeViewT = Backbone.View.extend({
 		});
 
 
-		// var series = [{name:"Temperature", data:[]}];
-		//series.push({name:"graph-data", data:this.generateData(this.dataPoints)});
+		// 
+		// build Highcharts
+		// 
 		var chart = new Highcharts.Chart(
 			this.bldChart(coptions.id+"-graph", '', 'temperature' )
 		);
 
-		//this.model.set("options", options);
-		this.model.set("chart", chart);
-		this.model.set("view", this);
+
+		this.model.set({"gauge":gauge, "chart":chart, "view":this}, {silent:false});
+
 
 		//
 		// listen to changes to model
 		//
 		this.listenTo(this.model, 'change', this.render);
+
+
+		// this.render();
 	},
 
 
@@ -149,12 +165,13 @@ var GaugeViewT = Backbone.View.extend({
 	 *
 	 *
 	 */
-	generateData: function (cnt) {
-		var data = [];
-		for (var i=0; i<cnt; i++)
-			data.push(0);
-		return data;
-	},
+	// generateData: function (cnt) {
+	// 	var data = [];
+	// 	for (var i=0; i<cnt; i++)
+	// 		data.push(0);
+	// 	return data;
+	// },
+
 
 
 	chartAddPoint: function(timestamp, data, redraw) {
@@ -163,7 +180,6 @@ var GaugeViewT = Backbone.View.extend({
 		var series = chart.series[0],
 			shift = series.data.length > this.dataPoints;	// shift if the series is 
 	                                                 		// longer than 20
-
 		if (typeof redraw === 'undefined')
 			redraw = true;
 
@@ -171,6 +187,15 @@ var GaugeViewT = Backbone.View.extend({
 			timestamp = (new Date()).getTime(); // current time
 
 		chart.series[0].addPoint([timestamp, parseFloat(data)], redraw, shift);
+	},
+
+
+	addHistory: function(history) {
+		var view = this.model.get("view");
+		_.each(history, function(p){
+			view.chartAddPoint(p[0],p[1],false);							
+		});
+		this.model.get('chart').redraw();
 	},
 
 
@@ -248,14 +273,34 @@ var GaugeViewT = Backbone.View.extend({
 
 
 	//
-	// the gauge value has changed - render it
+	// the temperature value has changed - render it
 	//
 	render: function() {
-		var val = this.model.get('currentVal');
-		this.gauge.setValueAnimated(val);
+
+		var val = parseFloat(this.model.get('currentVal'));
+
+		// 
+		// add some deviation for testing
+		// @todo remove this!
+		//
+		val = LIB.randomFloatFromInterval(val-1, val+1);
+
+		// 
+		// update the gauge
+		// 
+		this.model.get("gauge").setValueAnimated(val);
+
+		// 
+		// update the chart
+		// 
+		this.chartAddPoint(0,val);
+
+		// bye!
+		return this;
 	}
 
 });
+
 
 
 
@@ -265,18 +310,24 @@ var GaugeViewT = Backbone.View.extend({
  * uses a Bootstrp button to display state
  */
 var SwitchViewT = Backbone.View.extend({
+
+	tagName:	'div',
+
 	//
 	// the events this switch is listening to
 	//
 	events: {
-		"click" : "toggleState"
+		"click .beernode-switch" : "toggleState"
 	},
 
 	//
 	// initialize the switch
 	//
 	initialize: function() {
-		console.log('a new view: '+this.model.get('id'));
+		SwitchViewT.template = _.template($("#template-switch").html());
+
+		// console.log('a new view: '+this.model.get('id'));
+
 		//
 		// listen to changes to model
 		//
@@ -288,8 +339,9 @@ var SwitchViewT = Backbone.View.extend({
 	//
 	toggleState: function() {
 		this.model.toggle();
+
 		global.server.emit("device_set", {name: this.model.get('id'),
-										  val: this.model.get('currentVal')});
+										  val: this.model.get('currentVal')	});
 		return this;
 	},
 
@@ -298,17 +350,10 @@ var SwitchViewT = Backbone.View.extend({
 	//
 	render: function() {
 		var state = parseInt(this.model.get('currentVal'));
-
 		var config = this.model.get('config');
+		var cls = (state == 1) ? "btn-success":"btn-danger";
 
-		if (state == 1) {
-			this.$el.html(config.title);
-			this.$el.removeClass('btn-danger').addClass('btn-success');
-		}
-		else {
-			this.$el.html(config.title);
-			this.$el.removeClass('btn-success').addClass('btn-danger');
-		}
+		this.$el.html( SwitchViewT.template( {id:config.name, label:config.title, cls:cls} ) );
 
 		return this;
 	}
