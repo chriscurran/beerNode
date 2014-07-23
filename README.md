@@ -38,9 +38,14 @@ How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com
 	- # cd beerNode
 	- # npm install
 
+### Wiki
+There's a [wiki](https://github.com/chriscurran/beerNode/wiki) too.
+
+
+
 ### Screenprints
 #### Dashboard
-![alt text](http://www.planetcurran.com/beer/beerNode/Dashboard.png "Dashboard")
+![alt text](http://www.planetcurran.com/beer/beerNode/dashboard-00.png "Dashboard")
 
 #### PID Options
 ![alt text](http://www.planetcurran.com/beer/beerNode/1820-options.png "PID Options")
@@ -51,19 +56,8 @@ How to setup the Raspberry Pi with Node.js and 1-Wire: [Wiki](https://github.com
 
 ### Configuration
 
-Temperature and switch devices must be configured on the server before use.
+Please see the wiki.
 
-	[HLT_Temperature]
-	type=1820
-	file=/mnt/hlt_temperature
-	title=HLT
-	target=78
-	minValue=60
-	method=PID
-	kp=0.25
-	ki=0.01
-	kd=0.01
-	controls=HLT_Heater
 
 ### Bullpen
 
@@ -74,7 +68,7 @@ Temperature and switch devices must be configured on the server before use.
       - Integrate drag & drop "profile" builder. A profile is a sequence of tasks to perform.
 
 
-#### Builder preview
+#### Profile builder preview
 
  - A control is dragged from the left to the workspace. 
  - Controls can be reordered in thwe workspace by dragging them.
@@ -85,9 +79,6 @@ Temperature and switch devices must be configured on the server before use.
 ##### To edit the properties of a control, click it:
 
 ![Control options](http://www.planetcurran.com/beer/beerNode/builder-control-00.png)
-
-
-
 
 
 ### Technologies and packages used by beerNode
