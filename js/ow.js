@@ -39,6 +39,7 @@ var OneWireT = Class.extend({
 		this.devName = name;		//the device name
 		this.devMode = mode;		//the device mode (r, w, rw)
 		this.history = null;		//the device read history
+		this.nextCheck = Date.now();
 
 		try {
 			this.fp = fs_ext.openSync(name,mode);
@@ -51,6 +52,28 @@ var OneWireT = Class.extend({
 
 	isOpen: function() {
 		return (this.fp != null);
+	},
+
+	check: function(timestamp) {
+		try {
+			if (timestamp >= this.nextCheck) {
+				this.nextCheck = timestamp;
+				return true
+			}
+			return false;
+		}
+		catch (err) {
+			console.log("error checking 1wire device:"+this.name+" error="+err.message)
+		}
+	},
+
+	setCheckTime: function(timestamp) {
+		try {
+			this.nextCheck = timestamp;
+		}
+		catch (err) {
+			console.log("error setting check time for 1wire device:"+this.name+" error="+err.message)
+		}
 	},
 
 	close: function() {
@@ -162,14 +185,18 @@ var OneWireSwitchT = OneWireReadWriteT.extend({
 //
 var OneWire1820 = OneWireT.extend ({
 
-	init: function(name) {
+	init: function(name, historySize) {
 		this._super(name+"/temperature", "r");
 
+		if (typeof historySize === 'undefined')
+			historySize = 100;
+
+		this.historySize = historySize;
 		this.history = new Array();
 	},
 
 	push: function(item) {
-		if (this.history.length > 100)
+		if (this.history.length > this.historySize)
 			this.history.pop();
 
 		var now = (new Date()).getTime(); // current time

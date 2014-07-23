@@ -49,6 +49,9 @@ var express = require('express'),
 	//
 	doConfig();
 
+	global.threads = [];
+	global.override = false;
+
 	// 
 	// connect to mysql
 	// 
@@ -138,16 +141,84 @@ var express = require('express'),
 	//
 	// check the device list once every (global.config.system.interval) seconds
 	//
-	var interval = global.config.system.interval * 1000;
-	console.log("interval: "+interval);
+	var interval = 1000;
 	setInterval(function(arg) {
-		checkDevices();
+		timeSlice();
 	}, interval);
 
 
 	// 
 	// toodles... we're running - handlers take over from here.
 	// 
+
+/**
+ * process a time slice
+ */
+function timeSlice() {
+	checkDevices();
+
+	processThreads();
+}
+
+
+/**
+ * process a thread
+ */
+function processThreads() {
+
+	//
+	// iterate through our device list and check the ones we need to
+	//
+	for (var deviceName in global.config.devices) {
+
+		var dev = global.config.devices[deviceName];
+		if (dev.instance != null && dev.type === SENSOR_TEMPERATURE) {
+			// 
+			// this is a temp sensor - does it control anything?
+			// 
+			if (typeof dev.controls !== 'undefined') {
+				// it does, it does!
+				var controlled = findDevice(dev.controls);
+				if (controlled != null && controlled.override==false && global.override==false) {
+					// 
+					// OK, the sensor is controlling something, we found it, and the two overrides are off.
+					// 
+					switch (dev.method) {
+						case "pid":
+							
+							break;
+
+						case "range":
+							var val = parseFloat(dev.lastVal);
+							if (val < dev.rangeLow) {
+								if (controlled.instance.getState() == 0) {
+									controlled.instance.on();
+									controlled.lastVal = 1;
+									broadcastDeviceState(controlled);
+									console.log("thread range on: "+controlled.name);
+								}
+							}
+							else if (val > dev.rangeHigh) {
+								if (controlled.instance.getState() == 1) {
+									controlled.instance.off();
+									controlled.lastVal = 0;
+									broadcastDeviceState(controlled);
+									console.log("thread range off: "+controlled.name);
+								}
+							}
+							break;
+					}
+				}
+			}
+
+		}
+
+	}
+
+
+}
+
+
 
 // 
 //  ajax handler
@@ -220,7 +291,10 @@ function setupSocket(server_obj) {
 		//
 		socket.on('load_templates', function(data) {
 
-			fs.readFile(data.fname, 'utf8', function (err, data) {
+			var fname = (typeof data.fname === 'undefined') ? global.config.system.template:data.fname;
+			fname = global.config.system.templatePath + fname;
+
+			fs.readFile(fname, 'utf8', function (err, data) {
 				if (err) {
 					console.log('500 Error loading file:'+err);
 					socket.emit('load_templates', {errCode:500, errText:err});
@@ -248,12 +322,17 @@ function setupSocket(server_obj) {
 		//
 		socket.on('device_set', function(data) {
 			//dump(data);
-			var dev = findDevice(data.name);
-			if (dev == null) {
-				console.log('device_set:'+ data.name);
-				return;
+			if (data.name === 'all') {
+				globalSet(data.val);
 			}
-			deviceSet(dev, data, socket);
+			else if (global.override == false) {
+				var dev = findDevice(data.name);
+				if (dev == null) {
+					console.log('error device_set:'+ data.name);
+					return;
+				}
+				deviceSet(dev, data, socket);
+			}
 		});
 
 		//
@@ -276,6 +355,7 @@ function setupSocket(server_obj) {
 		// When a socket connects, it 'joins' the 'room' of each device, the name
 		// of the room being the name of the device.
 		//
+		socket.join("__all__");
 		for (var deviceName in global.config.devices) {
 			var dev = global.config.devices[deviceName];
 
@@ -286,7 +366,6 @@ function setupSocket(server_obj) {
 		//
 		// tell the client about our devices
 		//
-		// enumDevices(socket);
 		showClients();
 	});
 
@@ -325,7 +404,6 @@ function enumDevices(s) {
 	//
 	// send the deviceList back to the socket that just connected
 	//
-	//s.emit('device_enum', JSON.stringify(deviceList));
 	s.emit('device_enum', deviceList);
 }
 
@@ -336,12 +414,16 @@ function checkDevices() {
 	var obj = new Object();
 	obj.date = new Date();
 
+	var now = Date.now();
+
 	//
 	// iterate through our device list and check the ones we need to
 	//
 	for (var deviceName in global.config.devices) {
 		var dev = global.config.devices[deviceName];
-		if (dev.instance != null) {
+		if (dev.instance != null && dev.instance.check(now)) {
+
+			dev.instance.setCheckTime(now+(global.config.system.interval*1000));
 
 			var val = dev.instance.read();
 			if (val != dev.lastVal) {
@@ -371,7 +453,9 @@ function checkDevices() {
 				var pid = '';
 				if (dev.type === SENSOR_TEMPERATURE) {
 					dev.instance.push(val);
-					pid = "\tpid:"+dev.pid.update(val);
+
+					if (dev.method === 'pid')
+						pid = "\tpid:"+dev.pid.update(val);
 				}
 				console.log(dev.name + ": "+obj.val+pid);
 			}
@@ -379,6 +463,42 @@ function checkDevices() {
 		}
 	}
 }
+
+/**
+ *
+ */
+function globalSet(state) {
+
+	state = parseInt(state);
+	global.override = (state==0) ? true:false;
+	console.log("set global override state:"+global.override);
+
+	global.io.sockets.in("__all__").emit('device_status',{date:new Date(), name:"all", type:"system", val:state});
+
+	for (var deviceName in global.config.devices) {
+		var dev = global.config.devices[deviceName];
+
+		if (typeof dev.instance === 'undefined')
+			continue;
+		
+		switch(dev.type) {
+			case SENSOR_SWITCH2:
+			case SENSOR_SWITCH8:
+				if (state==0) {
+					// 
+					// global run state is OFF, turn device off
+					// 
+					dev.instance.off();
+					dev.lastVal = 0;
+					broadcastDeviceState(dev);
+				}
+				break;
+		}
+
+	}
+
+}
+
 
 /**
  *
@@ -393,25 +513,41 @@ function deviceSet(dev, data, clientSocket) {
 
 		case SENSOR_SWITCH2:
 		case SENSOR_SWITCH8:
-			if (parseInt(data.val) == 1)
+			val = parseInt(data.val);
+			if (val == 1) 
 				dev.instance.on();
-			else
+			else 
 				dev.instance.off();
 
 			dev.val = dev.lastVal = dev.instance.read();
 
-			var obj = new Object();
-			obj.date = new Date();
-			obj.name = dev.name;
-			obj.type = dev.client_type;
-			obj.val = dev.val;
-			//global.io.sockets.in(dev.name).emit('device_status', JSON.stringify(obj));
-			global.io.sockets.in(dev.name).emit('device_status', obj);
+			// 
+			// if this device is being controlled by a temp sensor, we want
+			// to set a 'override' flag to keep the auto on/off from happening
+			//
+			if (typeof dev.controlledBy !== 'undefined') {
+				dev.override = !(val == 1);
+			}
+			else {
+				dev.override = false;
+			}
 
-			console.log(clientSocket.id + " set " + dev.name + " to " + dev.val);
-
+			broadcastDeviceState(dev);
+			console.log(clientSocket.id + " set " + dev.name + " to " + dev.val + " (override="+dev.override+")");
 			break;
 	}
+}
+
+function broadcastDeviceState(dev) {
+
+	var obj = new Object();
+
+	obj.date = new Date();
+	obj.name = dev.name;
+	obj.type = dev.client_type;
+	obj.val  = dev.lastVal;
+	
+	global.io.sockets.in(dev.name).emit('device_status', obj);
 }
 
 //
@@ -428,26 +564,52 @@ function doConfig() {
 	var devices = [];
 	for (var entryName in global.config) {
 		if (global.config.hasOwnProperty(entryName)) {
+
 			if (entryName === 'system' || entryName === 'db')
 				continue;
 
 			var device = global.config[entryName];
 			device.name = entryName;
 			device.instance = null;
-			if (device.channel == undefined)
+			if (typeof device.channel === 'undefined')
 				device.channel = 0;
 
 			device.lastVal = 0;
+			device.override = false;
 
 			device.client_type = getDeviceType(device.type);
 			if (device.client_type === "temperature") {				
-				device.pid = new Controller(0.25, 0.01, 0.01); // k_p, k_i, k_d
-				device.pid.setTarget(device.target);
+				device.historySize = (typeof device.historySize === 'undefined') ? 100:parseInt(device.historySize);
+				
+				device.pid = null;
+				device.method = (typeof device.method === 'undefined') ? "range":device.method.toLowerCase();
+				switch(device.method) {
+					case "pid":
+						if (typeof device.kp === 'undefined') 	device.kp = 0.25;
+						if (typeof device.ki === 'undefined') 	device.ki = 0.01;
+						if (typeof device.kd === 'undefined') 	device.kd = 0.01;
+						device.kp = parseFloat(device.kp);
+						device.ki = parseFloat(device.ki);
+						device.kd = parseFloat(device.kd);
+						device.pid = new Controller(device.kp, device.ki, device.kd); // k_p, k_i, k_d
+						device.pid.setTarget(device.target);
+						break;
+
+					case "range":
+						if (typeof device.rangeLow === 'undefined') 	device.rangeLow = 50;
+						if (typeof device.rangeHigh === 'undefined') 	device.rangeHigh = device.rangeLow*2;
+						device.rangeLow = parseFloat(device.rangeLow);
+						device.rangeHigh = parseFloat(device.rangeHigh);
+						break;
+				}
+
 			}
 
 			devices[entryName] = device;
 		}
 	}
+
+
 
 	//
 	// create 1Wire instances for our devices
@@ -455,7 +617,7 @@ function doConfig() {
 	for (var deviceName in devices) {
 		var dev = devices[deviceName];
 		if (dev.type == SENSOR_TEMPERATURE) {
-			dev.instance = new ow.OneWire1820(dev.file);
+			dev.instance = new ow.OneWire1820(dev.file, dev.historySize);
 		}
 		else if (dev.type == SENSOR_SWITCH2) {
 			dev.instance = new ow.OneWire2406a(dev.file, dev.channel);
@@ -468,12 +630,31 @@ function doConfig() {
 			console.log("Failed to open:"+dev.name)
 			process.exit();
 		}
+
 	}
 
 	//
 	// save a copy of the device list to our config
 	//
 	global.config.devices = devices;
+
+
+	//
+	// create self references for the "controlled by" temperature devices
+	//
+	for (var deviceName in devices) {
+		var dev = devices[deviceName];
+		if (typeof dev.controls !== 'undefined') {
+			var control_target = findDevice(dev.controls);
+			if (control_target == null) {
+				console.log("Device config error matching "+deviceName+" 'controls' for "+dev.controls)
+				process.exit();
+			}
+			control_target.controlledBy = dev.name;
+		}
+	}
+
+
 }
 
 
