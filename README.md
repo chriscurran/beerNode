@@ -22,6 +22,15 @@ compared to full blown web server like Apache or NGINX).
 The software runs on Linux, any flavor. The development and testing is done
 using Fedora, but is targeted to the Raspberry Pi hardware. 
 
+### Overview
+	- Raspberry Pi based.
+	- Node.js server provides all server side functionality. No web server needed.
+	- Backbone.js and Bootstrap 3 are used to create the browser app.
+	- Fully templated UI.
+	- Temperature control via basic, range or PID.
+	- Advanced graphing with server backed history.
+	- 1-Wire and GPIO support
+
 
 ### Requirements
 
