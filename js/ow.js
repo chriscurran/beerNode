@@ -200,7 +200,7 @@ var OneWire1820 = OneWireT.extend ({
 			this.history.pop();
 
 		var now = (new Date()).getTime(); // current time
-		this.history.push([now,item]);
+		this.history.unshift([now,item]);
 	}
 
 });
