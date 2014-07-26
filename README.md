@@ -19,6 +19,13 @@ There are any number of good solutions for push functionality, but I selected
 Node.js due to it's socket stack and minimal cpu/memory requirements (as
 compared to full blown web server like Apache or NGINX).
 
+**beerNode** also offeres something not commonly found elsewhere: the display 
+is 100% up to you. The user interface is not "hard coded" - it's driven by 
+HTML "templates" that you can easily edit in order to create your own display/view. 
+It can be as simple, or as complicated as you want. It can be a brew controller, 
+or it can be used to control a bank of fermemters (no limit on how many). 
+Lastly, **beerNode** utilizes responsive Bootstrap, so your mobile devices work too!
+
 The software runs on Linux, any flavor. The development and testing is done
 using Fedora, but is targeted to the Raspberry Pi hardware. 
 
@@ -94,7 +101,6 @@ Please see the wiki.
  - Bootstrap 3.x, http://getbootstrap.com/
  - Backbone.js, http://backbonejs.org/
  - Highcharts, http://www.highcharts.com/
- - Node PID Controller, https://github.com/Philmod/node-pid-controller
  - INI Parser, https://github.com/shockie/node-iniparser
  - Class.js, http://ejohn.org/blog/simple-javascript-inheritance/
  - Steelseries, https://github.com/HanSolo/SteelSeries-Canvas
