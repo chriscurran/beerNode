@@ -21,10 +21,12 @@ var express = require('express'),
 	util = require('util'),
 	iniparser = require('iniparser'),
 	_ = require("underscore"),
-	ow = require("./js/ow.js");
+	ow = require("./js/ow.js"),
+	pidT = require('./js/pidT.js');
+
 	// sql = require("./js/sql.js"),
 	// db = require('./js/db.js'),
-	Controller = require('node-pid-controller');
+
 
 	var app = express();
 
@@ -183,13 +185,43 @@ function processThreads() {
 					// 
 					// OK, the sensor is controlling something, we found it, and the two overrides are off.
 					// 
+					var val = parseFloat(dev.lastVal);
 					switch (dev.method) {
 						case "pid":
-							
+							var now = Date.now();
+							if (controlled.instance.getState() == 1) {
+								if ( dev.instance.expired('on') ) {
+									// on slice has expired.
+									if (dev.instance.off_secs > 0) {
+										// turn switch off
+										controlled.instance.off();
+										controlled.lastVal = 0;
+										broadcastDeviceState(controlled);										
+									}
+									calcPID(dev, val);
+								}
+							}
+							else {
+								// switch is off
+								// check to see if off time slice has expired
+								if ( dev.instance.expired('off') ) {
+									// off slice has expired.
+									// calc new on/off slice values
+ 									calcPID(dev, val);
+
+									// turn switch on
+									if (dev.instance.on_secs > 0) {
+										controlled.instance.on();
+										controlled.lastVal = 1;
+										broadcastDeviceState(controlled);
+									}
+
+								}
+
+							}							
 							break;
 
 						case "range":
-							var val = parseFloat(dev.lastVal);
 							if (val < dev.rangeLow) {
 								if (controlled.instance.getState() == 0) {
 									controlled.instance.on();
@@ -218,6 +250,29 @@ function processThreads() {
 
 }
 
+
+function calcPID(dev, val) {
+	var now = Date.now();
+	var WINDOW_SECS = 10;
+
+	var pid = dev.pid.update(val);
+	pid = Number((pid).toFixed(2));
+
+	if (val >= dev.target)
+		pid = 0;
+
+	var di = dev.instance;
+	di.on_secs = (WINDOW_SECS * pid).toFixed(0);	// how many seconds of WINDOW_SECS to stay on
+	di.off_secs = WINDOW_SECS-di.on_secs;			// how many seconds of WINDOW_SECS to stay off
+
+	di.onTarget = (di.on_secs*1000)+now;
+	di.offTarget = (di.off_secs*1000)+di.onTarget;
+
+	di.setExpired('on',  di.onTarget);
+	di.setExpired('off', di.offTarget);
+
+	console.log("device:"+dev.name+" val:"+val.toFixed(2)+" pid:"+dev.pid.getHighResPID()+" on:"+dev.instance.on_secs+" off:"+dev.instance.off_secs+" lastError:"+dev.pid.lastError.toFixed(2)+" sumError:"+dev.pid.sumError.toFixed(2));
+}
 
 
 // 
@@ -450,14 +505,10 @@ function checkDevices() {
 				//
 				// log device change to server screen
 				//
-				var pid = '';
 				if (dev.type === SENSOR_TEMPERATURE) {
 					dev.instance.push(val);
-
-					if (dev.method === 'pid')
-						pid = "\tpid:"+dev.pid.update(val);
 				}
-				console.log(dev.name + ": "+obj.val+pid);
+				console.log(dev.name + ": "+obj.val);
 			}
 
 		}
@@ -591,7 +642,7 @@ function doConfig() {
 						device.kp = parseFloat(device.kp);
 						device.ki = parseFloat(device.ki);
 						device.kd = parseFloat(device.kd);
-						device.pid = new Controller(device.kp, device.ki, device.kd); // k_p, k_i, k_d
+						device.pid = new pidT(device.kp, device.ki, device.kd); // k_p, k_i, k_d
 						device.pid.setTarget(device.target);
 						break;
 
@@ -621,9 +672,11 @@ function doConfig() {
 		}
 		else if (dev.type == SENSOR_SWITCH2) {
 			dev.instance = new ow.OneWire2406a(dev.file, dev.channel);
+			dev.instance.off();
 		}
 		else if (dev.type == SENSOR_SWITCH8) {
 			dev.instance = new ow.OneWire2408(dev.file, dev.channel);
+			dev.instance.off();
 		}
 
 		if (typeof dev.instance === 'undefined' || dev.instance.isOpen() == false) {
