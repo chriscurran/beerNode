@@ -1,23 +1,30 @@
 var LIB = LIB || {};
 
 /**
+ * findBootstrapEnvironment()
+ *
+ * Determine what environment Bootstrap 3 is running as on the current client
+ * 
+ * @param	none
+ * @returns	sting	'xs','sm','md','lg'
+ *
  * http://stackoverflow.com/questions/14441456/how-to-detect-which-device-view-youre-on-using-twitter-bootstrap-api
  */
 function findBootstrapEnvironment() {
-    var envs = ['xs', 'sm', 'md', 'lg'];
+	var envs = ['xs', 'sm', 'md', 'lg'];
 
-    $el = $('<div>');
-    $el.appendTo($('body'));
+	$el = $('<div>');
+	$el.appendTo($('body'));
 
-    for (var i = envs.length - 1; i >= 0; i--) {
-        var env = envs[i];
+	for (var i = envs.length - 1; i >= 0; i--) {
+		var env = envs[i];
 
-        $el.addClass('hidden-'+env);
-        if ($el.is(':hidden')) {
-            $el.remove();
-            return env
-        }
-    };
+		$el.addClass('hidden-'+env);
+		if ($el.is(':hidden')) {
+			$el.remove();
+			return env
+		}
+	};
 } 
 
 
@@ -146,7 +153,7 @@ LIB.fieldType = function(type) {
 
 
 LIB.randomIntFromInterval = function(min,max) {
-    return Math.floor(Math.random()*(max-min+1)+min);
+	return Math.floor(Math.random()*(max-min+1)+min);
 }
 
 
