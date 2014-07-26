@@ -283,7 +283,7 @@ var GaugeViewT = Backbone.View.extend({
 		// add some deviation for testing
 		// @todo remove this!
 		//
-		val = LIB.randomFloatFromInterval(val-1, val+1);
+		//val = LIB.randomFloatFromInterval(val-1, val+1);
 
 		// 
 		// update the gauge
