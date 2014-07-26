@@ -28,7 +28,6 @@ SOFTWARE.
 //
 require( "./Class.js");
 
-//var fs_ext = require('fs-ext');
 var fs_ext = require('fs');
 
 //
@@ -39,7 +38,11 @@ var OneWireT = Class.extend({
 		this.devName = name;		//the device name
 		this.devMode = mode;		//the device mode (r, w, rw)
 		this.history = null;		//the device read history
-		this.nextCheck = Date.now();
+
+		this.timestamps = [];
+		this.timestamps['check'] = Date.now();
+		this.timestamps['on'] = Date.now();
+		this.timestamps['off'] = Date.now();
 
 		try {
 			this.fp = fs_ext.openSync(name,mode);
@@ -56,8 +59,8 @@ var OneWireT = Class.extend({
 
 	check: function(timestamp) {
 		try {
-			if (timestamp >= this.nextCheck) {
-				this.nextCheck = timestamp;
+			if (timestamp >= this.timestamps['check']) {
+				this.timestamps['check'] = timestamp;
 				return true
 			}
 			return false;
@@ -69,12 +72,33 @@ var OneWireT = Class.extend({
 
 	setCheckTime: function(timestamp) {
 		try {
-			this.nextCheck = timestamp;
+			this.timestamps['check'] = timestamp;
 		}
 		catch (err) {
 			console.log("error setting check time for 1wire device:"+this.name+" error="+err.message)
 		}
 	},
+
+
+	expired: function(slot) {
+		try {
+			var now = Date.now();
+			return (now >= this.timestamps[slot]);
+		}
+		catch (err) {
+			console.log("error checking pid expired:"+err.message)
+		}
+	},
+	
+	setExpired: function(slot, val) {
+		try {
+			this.timestamps[slot] = val; 
+		}
+		catch (err) {
+			console.log("error setting pid timestamp:"+err.message)
+		}
+	},
+
 
 	close: function() {
 		try {
@@ -162,6 +186,9 @@ var OneWireSwitchT = OneWireReadWriteT.extend({
 	init: function(name) {
 		this._super(name);
 		this.state = this.read();
+
+		this.on_secs = 0;
+		this.off_secs = 0;
 	},
 	on: function() {
 		this.state = 1;
@@ -173,7 +200,7 @@ var OneWireSwitchT = OneWireReadWriteT.extend({
 	},
 	getState: function() {
 		return this.state;
-	}
+	}	
 });
 
 
