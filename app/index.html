@@ -159,6 +159,9 @@ $().ready( function() {
 		global.server = server;
 		dsp("connected to {{ server }}, id:"+server.socket.sessionid);
 
+		$("#loading").removeClass("hidden");
+		$("#canvas").addClass("hidden");
+
 		// 
 		// ask for our templates
 		// 
