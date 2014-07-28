@@ -97,10 +97,11 @@ Please see the wiki.
 
 ### Technologies and packages used by beerNode
 
- - Node.js, http://nodejs.org/
- - Bootstrap 3.x, http://getbootstrap.com/
- - Backbone.js, http://backbonejs.org/
- - Highcharts, http://www.highcharts.com/
+ - Node.js, http://nodejs.org
+ - Bootstrap 3.x, http://getbootstrap.com
+ - Redis, http://redis.io
+ - Backbone.js, http://backbonejs.org
+ - Highcharts, http://www.highcharts.com
  - INI Parser, https://github.com/shockie/node-iniparser
- - Class.js, http://ejohn.org/blog/simple-javascript-inheritance/
+ - Class.js, http://ejohn.org/blog/simple-javascript-inheritance
  - Steelseries, https://github.com/HanSolo/SteelSeries-Canvas
