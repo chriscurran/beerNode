@@ -29,6 +29,8 @@ SOFTWARE.
 require( "./Class.js");
 
 var fs_ext = require('fs');
+var redis = require( "redis");
+var redis_client = redis.createClient();
 
 //
 // 1-wire base class
@@ -37,7 +39,7 @@ var OneWireT = Class.extend({
 	init: function(name, mode) {
 		this.devName = name;		//the device name
 		this.devMode = mode;		//the device mode (r, w, rw)
-		this.history = null;		//the device read history
+		//this.history = null;		//the device read history
 
 		this.timestamps = [];
 		this.timestamps['check'] = Date.now();
@@ -112,8 +114,10 @@ var OneWireT = Class.extend({
 	},
 
 
-	getHistory: function() {
-		return this.history;
+	getHistory: function(dev, cb) {
+		redis_client.lrange(this.devName, 0, this.historySize, function(err,res){
+			cb( dev, res );
+		}); 			//this.history;
 	},
 
 
@@ -219,15 +223,20 @@ var OneWire1820 = OneWireT.extend ({
 			historySize = 100;
 
 		this.historySize = historySize;
-		this.history = new Array();
+		//this.history = new Array();
 	},
 
 	push: function(item) {
-		if (this.history.length > this.historySize)
-			this.history.pop();
 
-		var now = (new Date()).getTime(); // current time
-		this.history.unshift([now,item]);
+		var self = this;
+		redis_client.llen(this.devName, function(err,res) {
+			if (res >= self.historySize)
+				redis_client.lpop(self.devName);
+
+			var now = (new Date()).getTime(); // current time
+			redis_client.rpush(self.devName, [now,item]);
+		});
+
 	}
 
 });
