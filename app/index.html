@@ -276,20 +276,9 @@ $().ready( function() {
 
 			// toggle current state
 			state = (state===1) ? 0:1;	
-
-			// $(this).data("state",state);
-
-			// if (state == 1) {
-			// 	$(this).removeClass("btn-danger").addClass("btn-success");
-			// 	$(this).html("Running");
-			// } else {
-			// 	$(this).addClass("btn-danger").removeClass("btn-success");
-			// 	$(this).html("Paused");
-			// }
 			setPauseState(state);
 
 			global.server.emit("device_set", {name: "all", val: state});
-
 		});
 
 	});
