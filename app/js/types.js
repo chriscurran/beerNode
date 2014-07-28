@@ -121,6 +121,9 @@ var GaugeViewT = Backbone.View.extend({
 		// 
 		this.$el.html( GaugeViewT.template( {id:coptions.id, gsize: coptions.size, bs_env:coptions.bs_env} ) );
 
+		this.avg = 0;			//this.model.get("currentVal");
+		this.avgPoints = 0;
+		// this.temps = [];
 
 		//
 		// create the gauge
@@ -161,24 +164,14 @@ var GaugeViewT = Backbone.View.extend({
 	},
 
 
-	/**
-	 *
-	 *
-	 */
-	// generateData: function (cnt) {
-	// 	var data = [];
-	// 	for (var i=0; i<cnt; i++)
-	// 		data.push(0);
-	// 	return data;
-	// },
-
-
-
 	chartAddPoint: function(timestamp, data, redraw) {
+		data = parseFloat(data);
+		timestamp = parseFloat(timestamp);
+
 
 		var chart = this.model.get("chart");
 		var series = chart.series[0],
-			shift = series.data.length > this.dataPoints;	// shift if the series is 
+			shift = series.data.length >= this.dataPoints;	// shift if the series is 
 	                                                 		// longer than 20
 		if (typeof redraw === 'undefined')
 			redraw = true;
@@ -186,13 +179,27 @@ var GaugeViewT = Backbone.View.extend({
 		if (timestamp==0)
 			timestamp = (new Date()).getTime(); // current time
 
-		chart.series[0].addPoint([timestamp, parseFloat(data)], redraw, shift);
+		chart.series[0].addPoint([timestamp, data], redraw, shift);
+
+
+		// 
+		// calc the avg temperature
+		// 
+		var tot = (this.avg * this.avgPoints) + data;
+		this.avgPoints++;
+		this.avg = tot / this.avgPoints;
+
+		series = chart.series[1];
+		shift = series.data.length >= this.avgPoints;	// shift if the series is 
+
+		chart.series[1].addPoint([timestamp, this.avg], redraw, shift);		
 	},
 
 
 	addHistory: function(history) {
 		var view = this.model.get("view");
 		_.each(history, function(p){
+			p = p.split(",");
 			view.chartAddPoint(p[0],p[1],false);							
 		});
 		this.model.get('chart').redraw();
@@ -207,8 +214,14 @@ var GaugeViewT = Backbone.View.extend({
 
 		var now = (new Date()).getTime(); // current time
 
+		var area_bg_color0 = Highcharts.getOptions().colors[0];
+		var area_bg_color1 = Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba');
+
 		var options = {
-			chart: {renderTo: renderTo},
+			chart: {
+				renderTo: renderTo,
+				zoomType: 'x',
+			},
 			type: 'line',
 			animation: true,
 			//marginRight: 10,
@@ -232,7 +245,7 @@ var GaugeViewT = Backbone.View.extend({
 					color: '#808080'
 				}]
 			},
-			legend: { enabled: false },
+			// legend: { enabled: false },
 			// exporting: { enabled: false },
 
             plotOptions: {
@@ -240,8 +253,8 @@ var GaugeViewT = Backbone.View.extend({
                     fillColor: {
                         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
                         stops: [
-                            [0, Highcharts.getOptions().colors[0]],
-                            [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                            [0, area_bg_color0],
+                            [1, area_bg_color1]
                         ]
                     },
                     lineWidth: 1,
@@ -255,15 +268,24 @@ var GaugeViewT = Backbone.View.extend({
                         }
                     },
                     threshold: null
-                }
+                },
+				line: {
+				    marker: {
+				    	enabled: false
+					}
+				}                
             },
     
-			series: [{
+			series: [
+			{
 				type:"area", 
 				name:"Temperature", 
-				pointInterval: 3600 * 1000,
-				pointStart: now,
-				data:[ this.model.get("currentVal")]
+				data:[ ]
+			},
+			{
+				type:"line", 
+				name:"Average Temperature", 
+				data:[  ]
 			}]
 
 		};
