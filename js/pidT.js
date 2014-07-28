@@ -28,6 +28,10 @@ overshoot when starting the grill, as well as starts stoking the fire before
 the temperature has gone below the setpoint.
 
  */
+var _ = require("underscore");
+
+var queueT = require("./queueT.js");
+
 var pidT = function(k_p, k_i, k_d) {
 	this.k_p = k_p || 1;
 	this.k_i = k_i || 0;
@@ -36,6 +40,9 @@ var pidT = function(k_p, k_i, k_d) {
 	this.sumError  = 0;
 	this.lastError = 0;
 	this.lastTime  = 0;
+
+	this.useQueue	= true;
+	this.queue		= new queueT(5);
 
 	this.target    = 0; // default value, can be modified with .setTarget
 };
@@ -53,7 +60,18 @@ pidT.prototype.update = function(current_value) {
 	this.current_value = current_value;
 
 	var error = (this.target - this.current_value);
-	this.sumError = this.sumError + error;
+
+	if (this.useQueue) {
+		// 
+		// keep a moving average of the error value
+		// 
+		this.queue.lpush(error);
+		this.sumError = this.queue.sum();
+	}
+	else {
+		this.sumError = this.sumError + error;
+	}
+
 	var change = error - this.lastError;
 	this.lastError = error;
 
