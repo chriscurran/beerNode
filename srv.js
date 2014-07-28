@@ -442,24 +442,30 @@ function enumDevices(s) {
 		var dev = global.config.devices[deviceName];
 
 		if (dev.instance != null) {
-			var obj = new Object();
 
-			obj.date = new Date();
-			obj.name = dev.name;
-			obj.type = dev.client_type;
-			obj.config = dev;
+			dev.instance.getHistory(dev, function(xdev, hist){
+				var obj = new Object();
 
-			obj.val = dev.instance.read();
-			obj.history = dev.instance.getHistory();
+				obj.date = new Date();
+				obj.name = xdev.name;
+				obj.type = xdev.client_type;
+				obj.config = xdev;
 
-			deviceList.push(obj);
+				obj.val = xdev.instance.read();
+				obj.history = hist;
+
+				deviceList.push(obj);
+				s.emit('device_enum', deviceList);
+				deviceList = [];
+			});
+
 		}
 	}
 
 	//
 	// send the deviceList back to the socket that just connected
 	//
-	s.emit('device_enum', deviceList);
+	//s.emit('device_enum', deviceList);
 }
 
 /**
