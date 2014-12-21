@@ -47,6 +47,10 @@ var pidT = function(k_p, k_i, k_d) {
 	this.target    = 0; // default value, can be modified with .setTarget
 };
 
+pidT.prototype.setKP = function(val)	{ this.k_p = val; };
+pidT.prototype.setKI = function(val)	{ this.k_i = val; };
+pidT.prototype.setKD = function(val)	{ this.k_d = val; };
+
 pidT.prototype.setTarget = function(target) {
 	this.target = target;
 };

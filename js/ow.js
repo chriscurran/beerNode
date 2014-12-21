@@ -27,6 +27,7 @@ SOFTWARE.
 // http://ejohn.org/blog/simple-javascript-inheritance/
 //
 require( "./Class.js");
+var queueT = require( "./queueT.js");
 
 var fs_ext = require('fs');
 var redis = require( "redis");
@@ -39,7 +40,7 @@ var OneWireT = Class.extend({
 	init: function(name, mode) {
 		this.devName = name;		//the device name
 		this.devMode = mode;		//the device mode (r, w, rw)
-		//this.history = null;		//the device read history
+		this.history = null;		//the device read history (memory cache of redis)
 
 		this.timestamps = [];
 		this.timestamps['check'] = Date.now();
@@ -114,10 +115,26 @@ var OneWireT = Class.extend({
 	},
 
 
-	getHistory: function(dev, cb) {
+	get_history: function() {
+		if (this.history == null)
+			return null;
+		return this.history.get_data();
+	},
+
+	load_history: function() {
+		var self = this;
 		redis_client.lrange(this.devName, 0, this.historySize, function(err,res){
-			cb( dev, res );
-		}); 			//this.history;
+			if (err != null)
+				console.log(err);
+			else {
+				// var l = res.len;
+				// for(var i=0; i<l; i++) {
+				// 	var point = res[i];
+				// 	res[i] = point.split(",");
+				// }
+				self.history.set_data(res);
+			}
+		}); 	
 	},
 
 
@@ -223,17 +240,20 @@ var OneWire1820 = OneWireT.extend ({
 			historySize = 100;
 
 		this.historySize = historySize;
-		//this.history = new Array();
+		this.history = new queueT(historySize);
+		this.load_history();
 	},
 
 	push: function(item) {
+		var now = (new Date()).getTime(); // current time
+
+		this.history.rpush(now+","+item);
 
 		var self = this;
 		redis_client.llen(this.devName, function(err,res) {
 			if (res >= self.historySize)
 				redis_client.lpop(self.devName);
 
-			var now = (new Date()).getTime(); // current time
 			redis_client.rpush(self.devName, [now,item]);
 		});
 

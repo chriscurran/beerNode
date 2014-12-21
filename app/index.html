@@ -19,6 +19,10 @@
 	<meta name="author" content="Chris Curran">
 
 	<link rel="stylesheet" href="css/common.css">
+	<link rel="stylesheet" href="css/dashboard.css">
+	<link rel="stylesheet" href="css/jquery.countdown.css">
+	
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css">
 
 	<!-- Latest compiled and minified CSS -->
 	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
@@ -48,6 +52,10 @@
 			background-color: #efe9e3;
 		}
 
+		.clock {
+			height: 50px;
+		}
+
 		.hidden {
 			display: none;
 		}
@@ -65,19 +73,27 @@
 	</style>
 
 
+		<script type="text/javascript">
+            // @param filename The name of the file WITHOUT ending
+            function playSound(filename){   
+                document.getElementById("sound").innerHTML='<audio autoplay="autoplay"><source src="./assets/beep.mp3" type="audio/mpeg" />';
+            }
 
+        </script>
 </head>
 <body>
 
 	<div id='loading' class="">
 		<div class="row">
-		    <div class="col-md-4 col-md-offset-4">
+			<div class="col-md-4 col-md-offset-4">
 				<h1>Loading. Please wait...</h1>
-		    </div>
+			</div>
 		</div>
 	</div>
 
 	<div id='canvas' class="hidden"></div>
+	<div id="sound" class="hidden"></div>
+	<button onclick="playSound();">Play</button> 
 
 	<div id='__templates__'></div>
 
@@ -95,9 +111,17 @@
 	<script type='text/javascript' src='js/steelseries-min.js'></script>
 
 	<script type='text/javascript' src='js/lib.js'></script>
-	<script type='text/javascript' src='js/types.js'></script>
+	<script type='text/javascript' src='js/deviceT.js'></script>
+	<script type='text/javascript' src='js/timerT.js'></script>
+	<script type='text/javascript' src='js/powerT.js'></script>
+	<script type='text/javascript' src='js/gaugeT.js'></script>
+	<script type='text/javascript' src='js/switchT.js'></script>
+
+	<script type='text/javascript' src="js/jquery.plugin.min.js"></script>
+	<script type='text/javascript' src="js/jquery.countdown.js"></script>
 
 	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="http://code.highcharts.com/highcharts-more.js"></script>	
 
 <script>
 
@@ -187,6 +211,17 @@ $().ready( function() {
 		var html = _.template($("#template-canvas").html(), {bs_env:global.bs_env});
 		$("#canvas").html(html);
 
+		$(".beernode-pause").click(function(ev){
+			var state = $(this).data("state"); 
+
+			// toggle current state
+			state = (state===1) ? 0:1;	
+			setPauseState(state);
+
+			global.server.emit("device_set", {name: "all", val: state});
+		});
+
+
 		// 
 		// ask for the device list now
 		// 
@@ -222,7 +257,7 @@ $().ready( function() {
 					//domId = dev.name+'-div';
 					domId = dev.name;
 					if ($("#"+domId).length != 0) {
-						var v = new GaugeViewT({
+						var v = new gaugeViewT({
 										id: dev.name,
 										el: $("#"+domId),
 										bs_env: global.bs_env,
@@ -244,7 +279,7 @@ $().ready( function() {
 					//domId = dev.name+'-div';
 					domId = dev.name;
 					if ($("#"+domId).length != 0) {
-						new SwitchViewT({
+						new switchViewT({
 										id: dev.name,
 										el: $("#"+domId),
 										titleString: dev.name,
@@ -271,15 +306,54 @@ $().ready( function() {
 			gaugeOptions(this, ev);
 		});
 
-		$(".beernode-pause").click(function(ev){
-			var state = $(this).data("state"); 
 
-			// toggle current state
-			state = (state===1) ? 0:1;	
-			setPauseState(state);
+		// $(".clock").TimeCircles({
+		// 	start: true,
+		// 	time: {
+		// 		Days: {show: false },
+		// 		Hours: {show: false }
+		// 	}
+		// }); 
 
-			global.server.emit("device_set", {name: "all", val: state});
-		});
+
+		// 
+		// create timer #1
+		// 
+		var mdl = new timerModelT({ id:"timer1", duration:"5s" });
+		var id = mdl.get("id");
+		new timerViewT({
+			id: id,
+			el: $("#"+id),
+			titleString: id,
+			model: mdl
+			});
+		global.timer1 = mdl;
+
+		// 
+		// create timer #2
+		// 
+		mdl = new timerModelT({ id:"timer2", duration:"60m" });
+		id = mdl.get("id");
+		new timerViewT({
+			id: id,
+			el: $("#"+id),
+			titleString: id,
+			model: mdl
+			});
+		global.timer2 = mdl;
+
+		// 
+		// create the power meter
+		// 
+		mdl = new powerModelT({ id:"power" });
+		var id = mdl.get("id");
+		new powerViewT({
+			id: id,
+			el: $("#"+id),
+			titleString: id,
+			model: mdl
+			});
+		global.power = mdl;
 
 	});
 
@@ -296,6 +370,26 @@ $().ready( function() {
 			//
 			ioEvents.trigger('change', device);
 		}
+	});
+
+
+	//
+	// the power state has chnaged
+	//
+	// data.cmd		the power command ('reserve' or 'release').
+	// data.who		name of device effecting power
+	// data.amps	the number of amps involved
+	// data.inuse	the current number of amps in use
+	//
+	server.on('power', function(data) {
+		debugger;
+		if (data.cmd === 'reserve') {
+			
+		}
+		else if (data.cmd === 'release') {
+
+		}
+		global.power.set("inuse", data.inuse);
 	});
 
 });
@@ -328,11 +422,11 @@ function gaugeOptions(self, ev) {
 
 	var html = _.template($("#template-gauge-options").html(), device.toJSON());
 
-	LIB.confirm({content:html, title:"Gauge options", class:"bootbox-small", goButton:"OK"}, function(result) {
+	LIB.confirm({content:html, title:"Gauge options", class:"bootbox-medium", goButton:"OK"}, function(result) {
 
 		if (result) {
 			var view = device.get('view');
-			var gauge = view.gauge;
+			var gauge = view.model.get("gauge");
 			var config = device.get("config");
 
 			var val = $("#gauge-target").val();
@@ -354,6 +448,55 @@ function gaugeOptions(self, ev) {
 				config.maxValue = val;
 			}
 
+
+			val = $("#gauge-method").val();
+			config.method = val;
+
+
+			val = $("#gauge-pid-kp").val();
+			if ($.isNumeric(val)) {
+				//gauge.setMaxValue(val);
+				config.kp = val;
+			}
+
+			val = $("#gauge-pid-ki").val();
+			if ($.isNumeric(val)) {
+				//gauge.setMaxValue(val);
+				config.ki = val;
+			}
+
+			val = $("#gauge-pid-kd").val();
+			if ($.isNumeric(val)) {
+				//gauge.setMaxValue(val);
+				config.kd = val;
+			}
+
+			val = $("#gauge-range-lower").val();
+			if ($.isNumeric(val)) {
+				//gauge.setMaxValue(val);
+				config.rangeLow = val;
+			}
+
+			val = $("#gauge-range-upper").val();
+			if ($.isNumeric(val)) {
+				//gauge.setMaxValue(val);
+				config.rangeHigh = val;
+			}
+
+
+			// var el = $("#gauge-override")[0];
+			//val = $("#gauge-override")[0].checked;
+			val = $("#gauge-override").prop('checked');
+			config.override = val;
+
+
+
+
+			var c = _.clone(config);
+			delete c.instance;
+			delete c.pid;
+			global.server.emit("device_config", c );
+
 			return true;
 		}
 	}); 
@@ -367,18 +510,40 @@ function gaugeOptions(self, ev) {
 
 			var grp = $("#"+ev.target.id).data('grp');
 			switch(grp) {
-			case "selector.pid":
-				if (val === 'pid') {
-					// PID
-					$("#gauge-pid-options").removeClass("hidden");	
-					$("#gauge-range-options").addClass("hidden");	
-				}
-				else {
-					// Ranging
-					$("#gauge-pid-options").addClass("hidden");		
-					$("#gauge-range-options").removeClass("hidden");	
-				}
-				break;
+				case "selector.pid":
+					if (val === 'pid') {
+						// PID
+						$("#gauge-pid-options").removeClass("hidden");	
+						$("#gauge-range-options").addClass("hidden");	
+					}
+					else if (val === 'range') {
+						// Ranging
+						$("#gauge-pid-options").addClass("hidden");
+						$("#gauge-range-options").removeClass("hidden");
+					}
+					else {
+						// basic
+						$("#gauge-pid-options").addClass("hidden");
+						$("#gauge-range-options").addClass("hidden");
+					}
+					break;
+
+				case "check.manual":
+					var method = $("#gauge-method").val();
+					var ischecked = $("#"+id).prop("checked");
+					if (ischecked) {
+						$("#gauge-method-div").addClass("hidden");
+						$("#gauge-pid-options").addClass("hidden");
+						$("#gauge-range-options").addClass("hidden");
+					}
+					else {
+						$("#gauge-method-div").removeClass("hidden");
+						if (method === 'pid')
+							$("#gauge-pid-options").removeClass("hidden");
+						if (method === 'range')
+							$("#gauge-range-options").removeClass("hidden");						
+					}
+					break;
 			}
 
 		});

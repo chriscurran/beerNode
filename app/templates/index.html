@@ -1,5 +1,19 @@
 <style>
 
+.beernode-pause {
+	width:100%;
+}
+
+
+.clock-div {
+	/*height: 75px;*/
+	margin-bottom:10px;
+}
+
+.clock_controls {
+	margin-top:2px;
+}
+
 .graph {
 	margin-top:10px;
 	margin-bottom:10px;
@@ -24,7 +38,7 @@
 
 /* the div that will hold a switch control */
  .beernode-switch-wrapper {
- 	/*margin-bottom: 4px;*/
+	/*margin-bottom: 4px;*/
  }
 
 /* override the default bootstrap button style */
@@ -38,43 +52,76 @@
 
 <script type="text/template" id="template-canvas">  
 
-    <!-- Fixed navbar -->
-    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
-      <div class="container">
-        
-        <div class="navbar-header">
-          <a class="navbar-brand" href="#">beerNode</a>
-        </div>
+		<!-- Fixed navbar -->
+		<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+			<div class="container">
+				
+				<div class="navbar-header">
+					<a class="navbar-brand" href="#">beerNode</a>
+				</div>
 
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
-
-            <li class="active"><a href="#">Dashboard</a></li>
-            <!--
-            <li><a href="./builder.html?profile_id=1">Builder</a></li>
-            -->
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li><div style="float:left; padding-top:14px;">
-            	<a href="https://github.com/chriscurran/beerNode" target=_github>gitHub</a>
-	            <a href="https://www.facebook.com/beerNode" target=_fb>
-            		<img src="./assets/FB-f-Logo__blue_29.png" style="border:0; height:20px;">
+				<div class="navbar-collapse collapse">
+						<!--
+					<ul class="nav navbar-nav">
+						<li class="active"><a href="#">Dashboard</a></li>
+						<li><a href="./builder.html?profile_id=1">Builder</a></li>
+					</ul>
+						-->
+					<ul class="nav navbar-nav navbar-right">
+						<li><div style="float:left; padding-top:14px;">
+							<a href="https://github.com/chriscurran/beerNode" target=_github>gitHub</a>
+							<a href="https://www.facebook.com/beerNode" target=_fb>
+								<img src="./assets/FB-f-Logo__blue_29.png" style="border:0; height:20px;">
 				</a>
 				</div>
-            </li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </div>
+						</li>
+					</ul>
+				</div><!--/.nav-collapse -->
+			</div>
+		</div>
 
 
 	<div class="container-fluid">
-	  <div class="row">
+		<div class="row">
 		
-		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-1 main">
-		  <button class='btn btn-large btn-success beernode-pause' data-state="1" type='button'>Running</button>
+		<div class="col-sm-3 col-md-2 sidebar">
+			<ul class="nav nav-sidebar">
+				<li>
+					<button class='btn btn-large btn-success beernode-pause' data-state="1" type='button'>Running</button>
+				</li>
+				<br>
 
-		  <div class="row placeholders">
+				<li>
+				<div class="panel-group" id="accordion">
+					<div class="panel panel-default">						
+						
+						<div id="collapsePower" class="panel-collapse">
+							<div class="panel-body">
+								<div id="power" class="power-div"></div>
+							</div>
+						</div>
+
+						<div id="collapseOne" class="panel-collapse">
+							<div class="panel-body">
+								<div id="timer1" class="clock-div"></div>
+								<br>
+								<div id="timer2" class="clock-div"></div>
+							</div>
+						</div>
+
+					
+					</div>
+				</div>
+
+				</li>
+
+			</ul>
+		</div>
+
+
+		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-0 main">
+
+			<div class="row placeholders">
 			
 			<div class="col-xs-6 col-sm-3 placeholder">
 				<center>
@@ -130,7 +177,7 @@
 			
 			</div>
 
-		  </div>
+			</div>
 
 
 			<ul id="tabs" class="nav nav-tabs" data-tabs="tabs">
@@ -160,7 +207,7 @@
 			</div>
 
 		</div>
-	  </div>
+		</div>
 	</div>
 </script>  
 
@@ -188,19 +235,29 @@
 
 	<label for="gauge-max">Maximum</label>
 	<input id="gauge-max" class="input-sz-xsmall" value="{{ config.maxValue }}" />
+	<br>	
 
+	<br>
+	<label for="gauge-controls">Controls</label>
+	<input id="gauge-controls" class="input-sz-md" disabled value="{{ config.controls }}" />
+	<br>	
+
+	<label for="gauge-override">Manual mode</label>
+	<input type='checkbox' id="gauge-override" class="" data-grp="check.manual" {{# if (config.override) print("checked") }} />
 
 	<br>	
-	<br>	
+	<br>
+	<div id="gauge-method-div" {{# if (config.override) print("class='hidden'"); }}>
 	<label for="gauge-method">Method</label>
 	<SELECT id="gauge-method" class="" data-grp="selector.pid">
 		<OPTION value='basic'>Basic</OPTION>
 		<OPTION value='range' {{# if (config.method==='range') print('selected'); }}>Ranging</OPTION>
 		<OPTION value='pid'   {{# if (config.method==='pid') print('selected'); }}>PID Controller</OPTION>
 	</SELECT>
+	</div>
 
 
-	<div id="gauge-range-options" {{# if (config.method!=='range') print("class='hidden'"); }} >
+	<div id="gauge-range-options" {{# if (config.override || config.method!=='range') print("class='hidden'"); }} >
 		<label for="gauge-range-lower">Lower</label>
 		<input id="gauge-range-lower" class="input-sz-xsmall" value="{{ config.rangeLow }}" />
 
@@ -210,7 +267,7 @@
 
 	</div>
 
-	<div id="gauge-pid-options" {{# if (config.method!=='pid') print("class='hidden'"); }} >
+	<div id="gauge-pid-options" {{# if (config.override || config.method!=='pid') print("class='hidden'"); }} >
 
 		<label for="gauge-pid-kp">KP</label>
 		<input id="gauge-pid-kp" class="input-sz-xsmall" value="{{ config.kp }}" />
@@ -232,9 +289,10 @@
 
 <script type="text/template" id="template-temperature"> 
 
-	<canvas id='{{ id }}-instance' width='{{ gsize }}' height='{{ gsize }}'></canvas>
 	<div class='temperature-options'>
-		<a class='gauge-options beernode-temperature' data-for='{{ id }}' href='#'>gauge options</a>
+		<a class='gauge-options beernode-temperature' data-for='{{ id }}' href='#'>
+		<canvas id='{{ id }}-instance' width='{{ gsize }}' height='{{ gsize }}'></canvas>
+		</a>
 	</div>
 
 </script>  
@@ -244,4 +302,79 @@
 	
 	<button id='{{ id }}-instance' class='btn {{ cls }} btn-large beernode-switch' type='button'>{{ label }}</button>
 
+</script>  
+
+<script type="text/template" id="template-timer">  
+	
+	<div id="{{ id }}_instance" class="clock" ></div>
+	<div id="{{ id }}_controls" class="clock_controls">
+		<button id='{{ id }}_toggle'   class='btn btn-xs btn-primary timer-toggle' type='button'>Start</button>
+		<button id='{{ id }}_settings' class='btn btn-xs timer-settings' type='button'>Setings</button>
+	</div>
+
+</script>  
+
+<script type="text/template" id="template-timer-settings">  
+	
+	<label for="timer-duration">Duration</label>
+	<input id="timer-duration" class="input-sz-sm" value="{{ minsLeft }}" />
+	<br>
+
+	<div class='timer-settings-alarm-div'>
+	{{#
+		debugger;
+		var html = '';
+		var cnt = 0;
+		_.each(alarms, function(alarm) {
+			var alarm = addAlarmRow(alarm,cnt++);
+			html += alarm.html;;
+		});
+
+		if (html === '') {
+			html = '<center style="margin-top:20px;">'+
+						'<a class="alarm-add-row" data-type="field" style="margin-left:4px;">'+
+							'No alarms set. Click to add one.'+
+						'</a>'+
+					'</center>';
+		}
+		print(html);
+	}}
+	</div>
+
+
+</script>  
+
+<script>  
+function addAlarmRow(alarm,rowidx) {
+	var ret = '';
+
+	if (alarm == null) {
+		alarm = {
+			when: Date.now(),
+			id: _.uniqueId("alarm_")
+		}
+	}
+
+	ret += "<div class='alarm-table-row'>";
+		// 
+		// the value
+		// 
+		ret += "<div id='alarm-val-div-"+alarm.id+"'>";
+		ret += alarm.when;
+		ret += "</div>";
+
+
+		// add/remove buttons
+		ret += "<div class='alarm-table-item alarm-table-item-add'>";
+
+			ret += '<a data-toggle="popover" data-content="Insert a new alarm here." data-type="field" class="alarm-add-row" style="margin-left:4px;" data-idx="'+rowidx+'"><i class="fa fa-plus">&nbsp;</i></a>';
+			ret += '<a data-toggle="popover" data-content="Delete this alarm." data-type="field" class="alarm-delete-row" style="margin-left:4px;" data-tag="'+alarm.id+'" ><i class="fa fa-minus"></i></a>';
+
+		ret += "</div>";
+
+	ret += "</div><div style='clear:both'></div>";
+
+	alarm.html = ret;
+	return alarm;
+}		
 </script>  

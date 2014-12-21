@@ -1,0 +1,24 @@
+{
+  "name": "beerNode",
+  "version": "1.0.0",
+  "description": "Node based homebrew controller platform.",
+  "main": "srv.js",
+  "keywords": [
+    "homebrew",
+    "node",
+    "backbone"
+  ],
+  "authors": [
+    "Chris Curran"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/chriscurran/beerNode",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

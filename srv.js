@@ -22,7 +22,8 @@ var express = require('express'),
 	iniparser = require('iniparser'),
 	_ = require("underscore"),
 	ow = require("./js/ow.js"),
-	pidT = require('./js/pidT.js');
+	pidT = require('./js/pidT.js'),
+	powerT = require('./js/powerT.js');
 
 	// sql = require("./js/sql.js"),
 	// db = require('./js/db.js'),
@@ -67,6 +68,9 @@ var express = require('express'),
 		console.log("beerNode server listening on port " + global.config.system.port);
 	});
 	global.io = setupSocket(server_http);
+
+	global.power = new powerT(global.config.maxAmps, global.io.sockets);		//30 amps max
+
 
 
 	//
@@ -196,7 +200,8 @@ function processThreads() {
 										// turn switch off
 										controlled.instance.off();
 										controlled.lastVal = 0;
-										broadcastDeviceState(controlled);										
+										broadcastDeviceState(controlled);
+										global.power.release(controlled.name);
 									}
 									calcPID(dev, val);
 								}
@@ -211,9 +216,11 @@ function processThreads() {
 
 									// turn switch on
 									if (dev.instance.on_secs > 0) {
-										controlled.instance.on();
-										controlled.lastVal = 1;
-										broadcastDeviceState(controlled);
+										if (global.power.reserve(controlled.name,controlled.amps)) {
+											controlled.instance.on();
+											controlled.lastVal = 1;
+											broadcastDeviceState(controlled);
+										}
 									}
 
 								}
@@ -223,19 +230,60 @@ function processThreads() {
 
 						case "range":
 							if (val < dev.rangeLow) {
-								if (controlled.instance.getState() == 0) {
-									controlled.instance.on();
-									controlled.lastVal = 1;
-									broadcastDeviceState(controlled);
-									console.log("thread range on: "+controlled.name);
+								// 
+								// we're below range
+								// 
+								if (dev.cooling == false) {
+									// 
+									// heater circuit
+									// 
+									if (controlled.instance.getState() == 0) {
+										if (global.power.reserve(controlled.name,controlled.amps)) {
+											controlled.instance.on();
+											controlled.lastVal = 1;
+											broadcastDeviceState(controlled);
+											console.log("thread range on: "+controlled.name);
+										}
+									}
+								}
+								else {
+									// 
+									// cooling circuit
+									// 
+									if (controlled.instance.getState() == 1) {
+										controlled.instance.off();
+										global.power.release(controlled.name);
+										controlled.lastVal = 0;
+										broadcastDeviceState(controlled);
+										console.log("thread range off: "+controlled.name);
+									}
 								}
 							}
 							else if (val > dev.rangeHigh) {
-								if (controlled.instance.getState() == 1) {
-									controlled.instance.off();
-									controlled.lastVal = 0;
-									broadcastDeviceState(controlled);
-									console.log("thread range off: "+controlled.name);
+								// 
+								// we're above range
+								// 
+								if (dev.cooling == false) {
+									// 
+									// heater circuit
+									// 
+									if (controlled.instance.getState() == 1) {
+										controlled.instance.off();
+										global.power.release(controlled.name);
+										controlled.lastVal = 0;
+										broadcastDeviceState(controlled);
+										console.log("thread range off: "+controlled.name);
+									}
+								}
+								else {
+									if (controlled.instance.getState() == 0) {
+										if (global.power.reserve(controlled.name,controlled.amps)) {
+											controlled.instance.on();
+											controlled.lastVal = 1;
+											broadcastDeviceState(controlled);
+											console.log("thread range on: "+controlled.name);
+										}
+									}
 								}
 							}
 							break;
@@ -391,6 +439,48 @@ function setupSocket(server_obj) {
 		});
 
 		//
+		// handler for client 'config' commands
+		//
+		socket.on('device_config', function(data) {
+			// console.log("---------------");
+			// dump(data);
+
+			var dev = findDevice(data.name);
+			if (dev == null) {
+				console.log('error device_config:'+ data.name);
+				return;
+			}
+
+			dev.method = (typeof data.method === 'undefined') ? dev.method:data.method;
+			dev.override = (typeof data.override === 'undefined') ? dev.override:data.override;
+
+			if (typeof dev.controls !== 'undefined') {
+				var control_target = findDevice(dev.controls);
+				if (control_target !== null) {
+					control_target.override = dev.override;
+				}
+			}
+
+
+			dev.rangeLow = (typeof data.rangeLow === 'undefined') ? dev.rangeLow:parseFloat(data.rangeLow);
+			dev.rangeHigh = (typeof data.rangeHigh === 'undefined') ? dev.rangeHigh:parseFloat(data.rangeHigh);
+
+			dev.kp = (typeof data.kp === 'undefined') ? dev.kp:parseFloat(data.kp);
+			dev.ki = (typeof data.ki === 'undefined') ? dev.ki:parseFloat(data.ki);
+			dev.kd = (typeof data.kd === 'undefined') ? dev.kd:parseFloat(data.kd);
+			dev.target = (typeof data.target === 'undefined') ? dev.target:parseFloat(data.target);
+			
+			dev.pid.setKP(dev.kp);
+			dev.pid.setKI(dev.ki);
+			dev.pid.setKD(dev.kd);
+			dev.pid.setTarget(dev.target);
+
+			console.log("config " + dev.name + " (override="+dev.override+")");
+
+		});
+
+
+		//
 		// handler for client 'sql' commands
 		//
 		/*
@@ -442,30 +532,24 @@ function enumDevices(s) {
 		var dev = global.config.devices[deviceName];
 
 		if (dev.instance != null) {
+			var obj = new Object();
 
-			dev.instance.getHistory(dev, function(xdev, hist){
-				var obj = new Object();
+			obj.date = new Date();
+			obj.name = dev.name;
+			obj.type = dev.client_type;
+			obj.config = dev;
 
-				obj.date = new Date();
-				obj.name = xdev.name;
-				obj.type = xdev.client_type;
-				obj.config = xdev;
+			obj.val = dev.instance.read();
+			obj.history = dev.instance.get_history();
 
-				obj.val = xdev.instance.read();
-				obj.history = hist;
-
-				deviceList.push(obj);
-				s.emit('device_enum', deviceList);
-				deviceList = [];
-			});
-
+			deviceList.push(obj);
 		}
 	}
 
 	//
 	// send the deviceList back to the socket that just connected
 	//
-	//s.emit('device_enum', deviceList);
+	s.emit('device_enum', deviceList);
 }
 
 /**
@@ -570,11 +654,17 @@ function deviceSet(dev, data, clientSocket) {
 
 		case SENSOR_SWITCH2:
 		case SENSOR_SWITCH8:
+
 			val = parseInt(data.val);
-			if (val == 1) 
-				dev.instance.on();
-			else 
+			if (val == 1) {
+				if (global.power.reserve(dev.name, dev.amps)) {
+					dev.instance.on();
+				}
+			}
+			else {
 				dev.instance.off();
+				global.power.release(dev.name);
+			}
 
 			dev.val = dev.lastVal = dev.instance.read();
 
@@ -582,12 +672,13 @@ function deviceSet(dev, data, clientSocket) {
 			// if this device is being controlled by a temp sensor, we want
 			// to set a 'override' flag to keep the auto on/off from happening
 			//
-			if (typeof dev.controlledBy !== 'undefined') {
-				dev.override = !(val == 1);
-			}
-			else {
-				dev.override = false;
-			}
+			// if (typeof dev.controlledBy !== 'undefined') {
+			// 	dev.override = !(val == 1);
+			// 	// dev.override = true;
+			// }
+			// else {
+			// 	dev.override = false;
+			// }
 
 			broadcastDeviceState(dev);
 			console.log(clientSocket.id + " set " + dev.name + " to " + dev.val + " (override="+dev.override+")");
@@ -635,37 +726,36 @@ function doConfig() {
 			device.override = false;
 
 			device.client_type = getDeviceType(device.type);
-			if (device.client_type === "temperature") {				
+			if (device.client_type === "temperature") {
 				device.historySize = (typeof device.historySize === 'undefined') ? 100:parseInt(device.historySize);
 				
-				device.pid = null;
+				// device.pid = null;
 				device.method = (typeof device.method === 'undefined') ? "range":device.method.toLowerCase();
-				switch(device.method) {
-					case "pid":
-						if (typeof device.kp === 'undefined') 	device.kp = 0.25;
-						if (typeof device.ki === 'undefined') 	device.ki = 0.01;
-						if (typeof device.kd === 'undefined') 	device.kd = 0.01;
-						device.kp = parseFloat(device.kp);
-						device.ki = parseFloat(device.ki);
-						device.kd = parseFloat(device.kd);
-						device.pid = new pidT(device.kp, device.ki, device.kd); // k_p, k_i, k_d
-						device.pid.setTarget(device.target);
-						break;
 
-					case "range":
-						if (typeof device.rangeLow === 'undefined') 	device.rangeLow = 50;
-						if (typeof device.rangeHigh === 'undefined') 	device.rangeHigh = device.rangeLow*2;
-						device.rangeLow = parseFloat(device.rangeLow);
-						device.rangeHigh = parseFloat(device.rangeHigh);
-						break;
-				}
+				if (typeof device.kp === 'undefined') 	device.kp = 0.20;
+				if (typeof device.ki === 'undefined') 	device.ki = 0.01;
+				if (typeof device.kd === 'undefined') 	device.kd = 0.01;
+				device.kp = parseFloat(device.kp);
+				device.ki = parseFloat(device.ki);
+				device.kd = parseFloat(device.kd);
+				device.pid = new pidT(device.kp, device.ki, device.kd); // k_p, k_i, k_d
+				device.pid.setTarget(device.target);
 
+				if (typeof device.rangeLow === 'undefined') 	device.rangeLow = 50;
+				if (typeof device.rangeHigh === 'undefined') 	device.rangeHigh = device.rangeLow*2;
+				device.rangeLow = parseFloat(device.rangeLow);
+				device.rangeHigh = parseFloat(device.rangeHigh);
+
+				device.cooling = (device.cooling === 'yes') ? true:false;
+
+			}
+			else if (device.client_type === "switch") {
+				device.amps = (typeof device.amps === 'undefined') ? 0:parseInt(device.amps);
 			}
 
 			devices[entryName] = device;
 		}
 	}
-
 
 
 	//
@@ -679,10 +769,12 @@ function doConfig() {
 		else if (dev.type == SENSOR_SWITCH2) {
 			dev.instance = new ow.OneWire2406a(dev.file, dev.channel);
 			dev.instance.off();
+			dev.amps = (typeof dev.amps == 'undefined') ? 1:dev.amps;
 		}
 		else if (dev.type == SENSOR_SWITCH8) {
 			dev.instance = new ow.OneWire2408(dev.file, dev.channel);
 			dev.instance.off();
+			dev.amps = (typeof dev.amps == 'undefined') ? 1:dev.amps;
 		}
 
 		if (typeof dev.instance === 'undefined' || dev.instance.isOpen() == false) {
@@ -710,6 +802,7 @@ function doConfig() {
 				process.exit();
 			}
 			control_target.controlledBy = dev.name;
+			dev.controlledObj = control_target;
 		}
 	}
 

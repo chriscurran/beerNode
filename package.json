@@ -8,6 +8,7 @@
     "socket.io": "0.9.x",
     "iniparser": "x",
     "mysql": "x",
+    "rpi-gpio": "x",
     "underscore": "x",
     "node-pid-controller": "x",
     "node-uuid": "x"
