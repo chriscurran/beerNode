@@ -1,6 +1,6 @@
 {
   "name": "beerNode",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node based homebrew controller platform.",
   "main": "srv.js",
   "keywords": [
@@ -13,7 +13,7 @@
   ],
   "license": "MIT",
   "homepage": "https://github.com/chriscurran/beerNode",
-  "private": true,
+  "private": false,
   "ignore": [
     "**/.*",
     "node_modules",
